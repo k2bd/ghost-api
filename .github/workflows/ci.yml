@@ -16,6 +16,7 @@ jobs:
       run:   |
          if [ "$RUNNER_OS" == "macOS" ]; then
             brew install docker docker-machine docker-compose
+            sudo docker –version
          fi
       shell: bash
     - uses: actions/setup-python@v2
