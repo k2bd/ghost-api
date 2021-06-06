@@ -119,10 +119,7 @@ class GhostService:
             return game
         (player,) = matched_players
 
-        try:
-            new_player_list.remove(player)
-        except ValueError:
-            return game
+        new_player_list.remove(player)
 
         turn_player_name = game.turn_player_name
         if turn_player_name == player.name:
