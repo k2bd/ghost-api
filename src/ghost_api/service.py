@@ -2,7 +2,8 @@ import boto3
 
 from ghost_api.constants import AWS_REGION, LOCAL_DYNAMODB_ENDPOINT, GAMES_TABLE_NAME
 from ghost_api.types import GameInfo, Move, Player
-from typing import Generator, Dict, Any
+from typing import Generator, Dict, Any, Optional
+from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist
 
 
 def dynamodb():
@@ -18,28 +19,58 @@ def dynamodb():
     return boto3.resource("dynamodb", **config)
 
 
+def new_game(room_code: str) -> GameInfo:
+    return GameInfo(
+        room_code=room_code,
+        players=[],
+        current_turn=None,
+        moves_made=[],
+    )
+
+
 class GhostService:
     def __init__(self):
         self.db = dynamodb()
         self.games_table = self.db.Table(GAMES_TABLE_NAME)
 
-    def create_game(self) -> GameInfo:
+    def create_game(self, room_code: str) -> GameInfo:
         """
         Create a new game in the database
 
         Raises
         ------
-        TODO
+        GameAlreadyExists
+            If the game already exists
         """
+        try:
+            existing_game = self.read_game(room_code)
+            raise GameAlreadyExists(f"Game {room_code!r} already exists: {existing_game!r}")
+        except GameDoesNotExist:
+            self.games_table.put_item(Item=new_game(room_code))
 
-    def read_game(self) -> GameInfo:
+        return self.read_game(room_code)
+
+    def read_game(self, room_code: str) -> Optional[GameInfo]:
         """
         Read a game state from the database
 
         Raises
         ------
-        TODO
+        GameDoesNotExist
+            If the game doesn't exist
         """
+        response = self.games_table.get_item(Key={"roomCode": room_code})
+
+        if "Item" not in response:
+            raise GameDoesNotExist(f"Game {room_code!r} does not exist")
+
+        return GameInfo.parse_obj(response["Item"])
+
+    def delete_game(self, room_code: str) -> None:
+        """
+        Remove a game in the database if it exists
+        """
+        self.games_table.delete_item(Key={"roomCode": room_code})
 
     def add_move(self, room_code: str, new_move: Move) -> GameInfo:
         """
@@ -48,19 +79,16 @@ class GhostService:
 
         Raises
         ------
-        TODO
+        WrongPlayerMoved
+            If a player other than the turn player is making the move
         """
 
-    def add_player(self, room_code, new_player: Player) -> GameInfo:
+    def add_player(self, room_code: str, new_player: Player) -> GameInfo:
         """
         Add a player to a game, if they're not already in the game
-
-        Raises
-        ------
-        TODO
         """
 
-    def delete_game(self, room_code: str) -> None:
+    def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """
-        Remove a game in the database if it exists
+        Remove a player from the game, updating the turn player if necessary.
         """

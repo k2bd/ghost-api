@@ -1,47 +1,79 @@
+from copy import Error
+from botocore import serialize
 from fastapi import FastAPI
 from mangum import Mangum
 from fastapi_camelcase import CamelModel
 from fastapi.responses import JSONResponse
 
 from ghost_api.types import GameInfo, Move, Player
+from ghost_api.service import GhostService
+from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
 
 app = FastAPI()
 
+
 class ErrorMessage(CamelModel):
+    """ An error message with additional content """
     message: str
 
 
-@app.get("/game/{gameId}")
-async def get_game_info(gameId: str) -> GameInfo:
+@app.get("/game/{room_code}", responses={404: {"model": ErrorMessage}})
+async def get_game_info(room_code: str) -> GameInfo:
     """
     Get game info of an existing game
     """
-    ...
+    service = GhostService()
+
+    try:
+        return service.read_game(room_code)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
 
 
-@app.delete("/game/{gameId}")
-async def delete_game(gameId: str) -> None:
+@app.post("/game/{room_code}", status_code=201, responses={409: {"model": ErrorMessage}})
+async def new_game(room_code: str) -> GameInfo:
+    """
+    Create a new game
+    """
+    service = GhostService()
+
+    try:
+        return service.create_game(room_code)
+    except GameAlreadyExists as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
+
+
+
+@app.delete("/game/{room_code}")
+async def delete_game(room_code: str) -> None:
     """
     Delete an existing game, so a new game can be started with the same room
     code
     """
-    ...
+    service = GhostService()
+    service.delete_game(room_code)
 
 
-@app.post("/game/{gameId}/move", responses={409: {"model": ErrorMessage}})
-async def post_new_move(gameId: str, move: Move) -> GameInfo:
+@app.post("/game/{room_code}/move", responses={409: {"model": ErrorMessage}})
+async def post_new_move(room_code: str, move: Move) -> GameInfo:
     """
-    Make a move in a game, creating it if it doesn't exist
+    Make a move in an existing game
     """
-    ...
+    service = GhostService()
+
+    try:
+        return service.add_move(room_code, move)
+    except WrongPlayerMoved as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
 
 
-@app.post("/game/{gameId}/join", responses={409: {"model": ErrorMessage}})
-async def post_new_move(gameId: str, player: Player) -> GameInfo:
+@app.post("/game/{room_code}/join")
+async def join_game(room_code: str, player: Player) -> GameInfo:
     """
-    Join a game, creating it if it doesn't exist
+    Join an existing game
     """
-    ...
+    service = GhostService()
+    return service.add_player(room_code, player)
 
 
 #: Handler for serverless deployment of FastAPI app

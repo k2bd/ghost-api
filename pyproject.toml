@@ -40,6 +40,8 @@ lint.sequence = [
 
 [tool.poe.tasks.test]
 sequence = [
+    {shell = "trap 'docker-compose down' EXIT"},
+    {shell = "docker-compose up"},
     {cmd = "pytest -v --cov=ghost_api"},
 ]
 
