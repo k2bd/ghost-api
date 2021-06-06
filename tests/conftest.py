@@ -1,8 +1,11 @@
 import boto3
 import pytest
 
+from fastapi.testclient import TestClient
+
 from ghost_api.constants import GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
 from ghost_api.service import GhostService
+from ghost_api.api import app
 
 
 @pytest.fixture
@@ -57,3 +60,11 @@ def service(games_table) -> GhostService:
     Return a service that can interact with a temporary games table
     """
     return GhostService()
+
+
+@pytest.fixture
+def api_client(service) -> TestClient:
+    """
+    Return an API test client that can interact with a temporary database
+    """
+    return TestClient(app)

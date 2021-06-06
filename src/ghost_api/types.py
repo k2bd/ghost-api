@@ -10,7 +10,7 @@ class Player(CamelModel):
 
 class Move(CamelModel):
     #: Player that made the move
-    player: Player
+    player_name: str
 
     #: 0-indexed x-position of the move
     position_x: int

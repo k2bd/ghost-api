@@ -85,7 +85,7 @@ class GhostService:
         """
         game = self.read_game(room_code)
 
-        if new_player in game.players:
+        if new_player.name in [player.name for player in game.players]:
             return game
 
         # If this is the first player to join the game, initialize the turn player
@@ -103,41 +103,6 @@ class GhostService:
             ExpressionAttributeValues={
                 ":p": [new_player.dict()],
                 ":t": turn_player_name,
-            },
-        )
-        return self.read_game(room_code)
-
-    def add_move(self, room_code: str, new_move: Move) -> GameInfo:
-        """
-        Play a new move if it's made by the turn player, also updating the turn
-        player.
-
-        Raises
-        ------
-        GameDoesNotExist
-            If the game doesn't exist
-        WrongPlayerMoved
-            If a player other than the turn player is making the move
-        """
-        game = self.read_game(room_code)
-
-        if game.turn_player_name != new_move.player.name:
-            msg = "Turn player is {!r} but {!r} tried to move"
-            raise WrongPlayerMoved(
-                msg.format(game.turn_player_name, new_move.player.name)
-            )
-
-        # TODO: validate move position
-
-        new_player_ind = (game.players.index(new_move.player) + 1) % len(game.players)
-        new_player_name = game.players[new_player_ind].name
-
-        self.games_table.update_item(
-            Key={"room_code": room_code},
-            UpdateExpression=("set turn_player_name=:p, moves=list_append(moves, :m)"),
-            ExpressionAttributeValues={
-                ":p": new_player_name,
-                ":m": [new_move.dict()],
             },
         )
         return self.read_game(room_code)
@@ -174,4 +139,40 @@ class GhostService:
             ConditionExpression=Attr("players").eq(game.dict()["players"]),
         )
 
+        return self.read_game(room_code)
+
+    def add_move(self, room_code: str, new_move: Move) -> GameInfo:
+        """
+        Play a new move if it's made by the turn player, also updating the turn
+        player.
+
+        Raises
+        ------
+        GameDoesNotExist
+            If the game doesn't exist
+        WrongPlayerMoved
+            If a player other than the turn player is making the move
+        """
+        game = self.read_game(room_code)
+
+        if game.turn_player_name != new_move.player_name:
+            msg = "Turn player is {!r} but {!r} tried to move"
+            raise WrongPlayerMoved(
+                msg.format(game.turn_player_name, new_move.player_name)
+            )
+
+        # TODO: validate move position
+
+        player_indexes = {player.name: ind for ind, player in enumerate(game.players)}
+        new_player_ind = (player_indexes[new_move.player_name] + 1) % len(game.players)
+        new_player_name = game.players[new_player_ind].name
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=("set turn_player_name=:p, moves=list_append(moves, :m)"),
+            ExpressionAttributeValues={
+                ":p": new_player_name,
+                ":m": [new_move.dict()],
+            },
+        )
         return self.read_game(room_code)

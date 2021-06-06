@@ -130,7 +130,7 @@ def test_add_move(service):
     service.add_player("AAAA", new_player2)
 
     new_move1 = Move(
-        player=new_player1,
+        player_name="player1",
         position_x=0,
         position_y=0,
         letter="Z",
@@ -143,7 +143,7 @@ def test_add_move(service):
     assert read_game.turn_player_name == "player2"
 
     new_move2 = Move(
-        player=new_player2,
+        player_name="player2",
         position_x=0,
         position_y=1,
         letter="U",
@@ -168,7 +168,7 @@ def test_add_move_wrong_player(service):
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
-        player=new_player2,
+        player_name="player2",
         position_x=0,
         position_y=0,
         letter="U",
@@ -190,7 +190,7 @@ def test_add_move_empty_game(service):
 
     new_player = Player(name="player1")
     new_move = Move(
-        player=new_player,
+        player_name="player1",
         position_x=0,
         position_y=0,
         letter="U",
@@ -217,7 +217,7 @@ def test_remove_player_turn_player(service):
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
-        player=new_player1,
+        player_name="player1",
         position_x=0,
         position_y=0,
         letter="Z",
