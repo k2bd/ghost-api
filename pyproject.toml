@@ -40,10 +40,17 @@ lint.sequence = [
 
 [tool.poe.tasks.test]
 sequence = [
-    {shell = "trap 'docker-compose down' EXIT"},
-    {shell = "docker-compose up"},
-    {cmd = "pytest -v --cov=ghost_api"},
+    {shell = "docker-compose up -d"},
+    {shell = "trap 'docker-compose down' EXIT; pytest -v --cov=ghost_api"},
 ]
+
+[tool.poe.tasks.test.env]
+GHOST_GAMES_TABLE_NAME = "games"
+LOCAL_DYNAMODB_ENDPOINT = "http://localhost:8000"
+# Env vars required by boto3
+AWS_DEFAULT_REGION = "fake-region"
+AWS_ACCESS_KEY_ID = "fake-key"
+AWS_SECRET_ACCESS_KEY = "fake-secret-key"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

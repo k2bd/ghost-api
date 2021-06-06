@@ -1,19 +1,21 @@
 from copy import Error
+
 from botocore import serialize
 from fastapi import FastAPI
-from mangum import Mangum
-from fastapi_camelcase import CamelModel
 from fastapi.responses import JSONResponse
+from fastapi_camelcase import CamelModel
+from mangum import Mangum
 
-from ghost_api.types import GameInfo, Move, Player
-from ghost_api.service import GhostService
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
+from ghost_api.service import GhostService
+from ghost_api.types import GameInfo, Move, Player
 
 app = FastAPI()
 
 
 class ErrorMessage(CamelModel):
-    """ An error message with additional content """
+    """An error message with additional content"""
+
     message: str
 
 
@@ -30,7 +32,11 @@ async def get_game_info(room_code: str) -> GameInfo:
         return JSONResponse(status_code=404, content={"message": str(e)})
 
 
-@app.post("/game/{room_code}", status_code=201, responses={409: {"model": ErrorMessage}})
+@app.post(
+    "/game/{room_code}",
+    status_code=201,
+    responses={409: {"model": ErrorMessage}},
+)
 async def new_game(room_code: str) -> GameInfo:
     """
     Create a new game
@@ -41,7 +47,6 @@ async def new_game(room_code: str) -> GameInfo:
         return service.create_game(room_code)
     except GameAlreadyExists as e:
         return JSONResponse(status_code=409, content={"message": str(e)})
-
 
 
 @app.delete("/game/{room_code}")
@@ -76,5 +81,8 @@ async def join_game(room_code: str, player: Player) -> GameInfo:
     return service.add_player(room_code, player)
 
 
-#: Handler for serverless deployment of FastAPI app
+# TODO: kick player
+
+
+#: Handler for optional serverless deployment of FastAPI app
 handler = Mangum(app)

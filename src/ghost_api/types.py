@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from fastapi_camelcase import CamelModel
 
@@ -26,8 +26,8 @@ class GameInfo(CamelModel):
     #: Players, in move order
     players: List[Player]
 
-    #: Current turn player
-    current_turn: Optional[Player]
+    #: Current turn player name
+    turn_player_name: Optional[str]
 
     #: Moves made so far, in play order
-    moves_made: List[Move]
+    moves: List[Move]

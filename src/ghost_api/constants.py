@@ -1,7 +1,6 @@
 import os
 from typing import Optional
 
-
 #: Name of the games table in DynamoDB
 GAMES_TABLE_NAME: str = os.environ["GHOST_GAMES_TABLE_NAME"]
 

@@ -1,9 +1,10 @@
+from typing import Any, Dict, Generator, Optional
+
 import boto3
 
-from ghost_api.constants import AWS_REGION, LOCAL_DYNAMODB_ENDPOINT, GAMES_TABLE_NAME
+from ghost_api.constants import AWS_REGION, GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
+from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
 from ghost_api.types import GameInfo, Move, Player
-from typing import Generator, Dict, Any, Optional
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist
 
 
 def dynamodb():
@@ -23,8 +24,8 @@ def new_game(room_code: str) -> GameInfo:
     return GameInfo(
         room_code=room_code,
         players=[],
-        current_turn=None,
-        moves_made=[],
+        turn_player_name=None,
+        moves=[],
     )
 
 
@@ -44,9 +45,11 @@ class GhostService:
         """
         try:
             existing_game = self.read_game(room_code)
-            raise GameAlreadyExists(f"Game {room_code!r} already exists: {existing_game!r}")
+            raise GameAlreadyExists(
+                f"Game {room_code!r} already exists: {existing_game!r}"
+            )
         except GameDoesNotExist:
-            self.games_table.put_item(Item=new_game(room_code))
+            self.games_table.put_item(Item=dict(new_game(room_code)))
 
         return self.read_game(room_code)
 
@@ -59,7 +62,7 @@ class GhostService:
         GameDoesNotExist
             If the game doesn't exist
         """
-        response = self.games_table.get_item(Key={"roomCode": room_code})
+        response = self.games_table.get_item(Key={"room_code": room_code})
 
         if "Item" not in response:
             raise GameDoesNotExist(f"Game {room_code!r} does not exist")
@@ -70,7 +73,39 @@ class GhostService:
         """
         Remove a game in the database if it exists
         """
-        self.games_table.delete_item(Key={"roomCode": room_code})
+        self.games_table.delete_item(Key={"room_code": room_code})
+
+    def add_player(self, room_code: str, new_player: Player) -> GameInfo:
+        """
+        Add a player to a game, if they're not already in the game
+
+        Raises
+        ------
+        GameDoesNotExist
+            If the game doesn't exist
+        """
+        game = self.read_game(room_code)
+
+        if new_player in game.players:
+            return
+
+        # If this is the first player to join the game, initialize the turn player
+        turn_player_name = (
+            game.turn_player_name
+            if game.turn_player_name is not None
+            else new_player.name
+        )
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=(
+                "set turn_player_name=:t, players=list_append(players, :p)"
+            ),
+            ExpressionAttributeValues={
+                ":p": [new_player.dict()],
+                ":t": turn_player_name,
+            },
+        )
 
     def add_move(self, room_code: str, new_move: Move) -> GameInfo:
         """
@@ -79,16 +114,38 @@ class GhostService:
 
         Raises
         ------
+        GameDoesNotExist
+            If the game doesn't exist
         WrongPlayerMoved
             If a player other than the turn player is making the move
         """
+        game = self.read_game(room_code)
 
-    def add_player(self, room_code: str, new_player: Player) -> GameInfo:
-        """
-        Add a player to a game, if they're not already in the game
-        """
+        if game.turn_player_name != new_move.player.name:
+            msg = "Turn player is {!r} but {!r} tried to move"
+            raise WrongPlayerMoved(
+                msg.format(game.turn_player_name, new_move.player.name)
+            )
+
+        # TODO: validate move position
+
+        player_turns = {player.name: ind for ind, player in enumerate(game.players)}
+        new_player_ind = (player_turns[new_move.player.name] + 1) % len(game.players)
+        new_player_name = game.players[new_player_ind].name
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=(
+                "set turn_player_name=:p, moves=list_append(moves, :m)"
+            ),
+            ExpressionAttributeValues={
+                ":p": new_player_name,
+                ":m": [new_move.dict()],
+            },
+        )
 
     def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """
         Remove a player from the game, updating the turn player if necessary.
         """
+        raise NotImplementedError("TODO")
