@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "ghost-api"
+version = "0.1.0"
+description = ""
+authors = ["Kevin Duff <kevinkelduff@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.65.1"
+pydantic = "^1.8.2"
+fastapi-camelcase = "^1.0.2"
+mangum = "^0.11.0"
+boto3 = "^1.17.88"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+flake8 = "^3.9.2"
+pytest-cov = "^2.12.1"
+mypy = "^0.812"
+isort = "^5.8.0"
+poethepoet = "^0.10.0"
+black = "^21.5b2"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.poe.tasks]
+autoformat.sequence = [
+    {cmd = "black src tests"},
+    {cmd = "isort src tests"},
+]
+
+lint.sequence = [
+    {cmd = "black --check -v src tests"},
+    {cmd = "isort --check -v src tests"},
+    {cmd = "flake8 src tests"},
+    {cmd = "mypy --pretty src tests"},
+]
+
+[tool.poe.tasks.test]
+sequence = [
+    {cmd = "pytest -v --cov=ghost_api"},
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
