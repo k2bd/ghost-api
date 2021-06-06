@@ -196,4 +196,4 @@ def test_add_move_empty_game(service):
 
     read_game = service.read_game("AAAA")
     assert read_game.moves == []
-    assert read_game.turn_player_name == None
+    assert read_game.turn_player_name is None

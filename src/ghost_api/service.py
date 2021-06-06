@@ -1,5 +1,3 @@
-from typing import Any, Dict, Generator, Optional
-
 import boto3
 
 from ghost_api.constants import AWS_REGION, GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
@@ -53,7 +51,7 @@ class GhostService:
 
         return self.read_game(room_code)
 
-    def read_game(self, room_code: str) -> Optional[GameInfo]:
+    def read_game(self, room_code: str) -> GameInfo:
         """
         Read a game state from the database
 
@@ -87,7 +85,7 @@ class GhostService:
         game = self.read_game(room_code)
 
         if new_player in game.players:
-            return
+            return game
 
         # If this is the first player to join the game, initialize the turn player
         turn_player_name = (
@@ -106,6 +104,7 @@ class GhostService:
                 ":t": turn_player_name,
             },
         )
+        return self.read_game(room_code)
 
     def add_move(self, room_code: str, new_move: Move) -> GameInfo:
         """
@@ -135,14 +134,13 @@ class GhostService:
 
         self.games_table.update_item(
             Key={"room_code": room_code},
-            UpdateExpression=(
-                "set turn_player_name=:p, moves=list_append(moves, :m)"
-            ),
+            UpdateExpression=("set turn_player_name=:p, moves=list_append(moves, :m)"),
             ExpressionAttributeValues={
                 ":p": new_player_name,
                 ":m": [new_move.dict()],
             },
         )
+        return self.read_game(room_code)
 
     def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """

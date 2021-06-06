@@ -1,6 +1,3 @@
-from copy import Error
-
-from botocore import serialize
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi_camelcase import CamelModel
@@ -19,8 +16,12 @@ class ErrorMessage(CamelModel):
     message: str
 
 
-@app.get("/game/{room_code}", responses={404: {"model": ErrorMessage}})
-async def get_game_info(room_code: str) -> GameInfo:
+@app.get(
+    "/game/{room_code}",
+    response_model=GameInfo,
+    responses={404: {"model": ErrorMessage}},
+)
+async def get_game_info(room_code: str):
     """
     Get game info of an existing game
     """
@@ -34,10 +35,11 @@ async def get_game_info(room_code: str) -> GameInfo:
 
 @app.post(
     "/game/{room_code}",
+    response_model=GameInfo,
     status_code=201,
     responses={409: {"model": ErrorMessage}},
 )
-async def new_game(room_code: str) -> GameInfo:
+async def new_game(room_code: str):
     """
     Create a new game
     """
@@ -59,8 +61,12 @@ async def delete_game(room_code: str) -> None:
     service.delete_game(room_code)
 
 
-@app.post("/game/{room_code}/move", responses={409: {"model": ErrorMessage}})
-async def post_new_move(room_code: str, move: Move) -> GameInfo:
+@app.post(
+    "/game/{room_code}/move",
+    response_model=GameInfo,
+    responses={409: {"model": ErrorMessage}},
+)
+async def post_new_move(room_code: str, move: Move):
     """
     Make a move in an existing game
     """
@@ -72,8 +78,8 @@ async def post_new_move(room_code: str, move: Move) -> GameInfo:
         return JSONResponse(status_code=409, content={"message": str(e)})
 
 
-@app.post("/game/{room_code}/join")
-async def join_game(room_code: str, player: Player) -> GameInfo:
+@app.post("/game/{room_code}/join", response_model=GameInfo)
+async def join_game(room_code: str, player: Player):
     """
     Join an existing game
     """
