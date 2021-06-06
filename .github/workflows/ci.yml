@@ -12,6 +12,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install docker on MacOS
+      run:   |
+         if [ "$RUNNER_OS" == "macOS" ]; then
+            brew install docker docker-machine docker-compose
+         fi
+      shell: bash
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
