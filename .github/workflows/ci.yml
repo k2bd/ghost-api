@@ -5,20 +5,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: [3.8]
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install docker on MacOS
-      run:   |
-         if [ "$RUNNER_OS" == "macOS" ]; then
-            brew install docker docker-machine docker-compose
-            sudo docker –version
-         fi
-      shell: bash
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
