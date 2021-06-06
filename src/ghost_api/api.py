@@ -100,17 +100,17 @@ async def join_game(room_code: str, player: Player):
 
 
 @app.delete(
-    "/game/{room_code}/player",
+    "/game/{room_code}/player/{player_name}",
     response_model=GameInfo,
     responses={404: {"model": ErrorMessage, "description": "The game does not exist"}},
 )
-async def remove_player(room_code: str, player: Player):
+async def remove_player(room_code: str, player_name: str):
     """
     Remove a player from a game
     """
     service = GhostService()
     try:
-        return service.remove_player(room_code, player)
+        return service.remove_player(room_code, player_name)
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
 

@@ -43,7 +43,7 @@ lint.sequence = [
 [tool.poe.tasks.test]
 sequence = [
     {shell = "docker-compose up -d"},
-    {shell = "trap 'docker-compose down' EXIT; pytest -v --cov=ghost_api"},
+    {shell = "trap 'docker-compose down' EXIT; pytest -v --cov-report=xml --cov=ghost_api"},
 ]
 
 [tool.poe.tasks.test.env]

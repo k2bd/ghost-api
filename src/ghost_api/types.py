@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from fastapi_camelcase import CamelModel
 

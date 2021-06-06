@@ -43,10 +43,8 @@ class GhostService:
             If the game already exists
         """
         try:
-            existing_game = self.read_game(room_code)
-            raise GameAlreadyExists(
-                f"Game {room_code!r} already exists: {existing_game!r}"
-            )
+            self.read_game(room_code)
+            raise GameAlreadyExists(f"Game {room_code!r} already exists")
         except GameDoesNotExist:
             self.games_table.put_item(Item=dict(new_game(room_code)))
 
@@ -107,12 +105,19 @@ class GhostService:
         )
         return self.read_game(room_code)
 
-    def remove_player(self, room_code: str, player: Player) -> GameInfo:
+    def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """
         Remove a player from the game, updating the turn player if necessary.
         """
         game = self.read_game(room_code)
         new_player_list = game.players.copy()
+
+        matched_players = [
+            player for player in game.players if player.name == player_name
+        ]
+        if len(matched_players) == 0:
+            return game
+        (player,) = matched_players
 
         try:
             new_player_list.remove(player)

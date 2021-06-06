@@ -1,11 +1,10 @@
 import boto3
 import pytest
-
 from fastapi.testclient import TestClient
 
+from ghost_api.api import app
 from ghost_api.constants import GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
 from ghost_api.service import GhostService
-from ghost_api.api import app
 
 
 @pytest.fixture

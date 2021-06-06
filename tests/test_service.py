@@ -1,4 +1,3 @@
-from os import read
 import pytest
 
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
@@ -188,7 +187,6 @@ def test_add_move_empty_game(service):
     """
     service.create_game("AAAA")
 
-    new_player = Player(name="player1")
     new_move = Move(
         player_name="player1",
         position_x=0,
@@ -226,11 +224,12 @@ def test_remove_player_turn_player(service):
 
     assert current_game.turn_player_name == "player2"
 
-    service.remove_player("AAAA", new_player2)
+    service.remove_player("AAAA", "player2")
 
     read_game = service.read_game("AAAA")
     assert read_game.players == [new_player1]
     assert read_game.turn_player_name == "player1"
+
 
 def test_remove_player_other_player(service):
     """
@@ -246,11 +245,12 @@ def test_remove_player_other_player(service):
 
     assert current_game.turn_player_name == "player1"
 
-    service.remove_player("AAAA", new_player2)
+    service.remove_player("AAAA", "player2")
 
     read_game = service.read_game("AAAA")
     assert read_game.players == [new_player1]
     assert read_game.turn_player_name == "player1"
+
 
 def test_remove_player_only_player(service):
     """
@@ -261,8 +261,24 @@ def test_remove_player_only_player(service):
     new_player1 = Player(name="player1")
     service.add_player("AAAA", new_player1)
 
-    service.remove_player("AAAA", new_player1)
+    service.remove_player("AAAA", "player1")
 
     read_game = service.read_game("AAAA")
     assert read_game.players == []
     assert read_game.turn_player_name is None
+
+
+def test_remove_player_nonexistent_player(service):
+    """
+    Removing the only player resets the turn player to None
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+
+    service.remove_player("AAAA", "player2")
+
+    read_game = service.read_game("AAAA")
+    assert read_game.players == [new_player1]
+    assert read_game.turn_player_name == "player1"
