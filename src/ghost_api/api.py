@@ -19,7 +19,7 @@ class ErrorMessage(CamelModel):
 @app.get(
     "/game/{room_code}",
     response_model=GameInfo,
-    responses={404: {"model": ErrorMessage}},
+    responses={404: {"model": ErrorMessage, "description": "The game does not exist"}},
 )
 async def get_game_info(room_code: str):
     """
@@ -37,7 +37,7 @@ async def get_game_info(room_code: str):
     "/game/{room_code}",
     response_model=GameInfo,
     status_code=201,
-    responses={409: {"model": ErrorMessage}},
+    responses={409: {"model": ErrorMessage, "description": "The game already exists"}},
 )
 async def new_game(room_code: str):
     """
@@ -64,7 +64,10 @@ async def delete_game(room_code: str) -> None:
 @app.post(
     "/game/{room_code}/move",
     response_model=GameInfo,
-    responses={409: {"model": ErrorMessage}},
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {"model": ErrorMessage, "description": "It's not this player's turn"},
+    },
 )
 async def post_new_move(room_code: str, move: Move):
     """
@@ -76,18 +79,40 @@ async def post_new_move(room_code: str, move: Move):
         return service.add_move(room_code, move)
     except WrongPlayerMoved as e:
         return JSONResponse(status_code=409, content={"message": str(e)})
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
 
 
-@app.post("/game/{room_code}/join", response_model=GameInfo)
+@app.post(
+    "/game/{room_code}/player",
+    response_model=GameInfo,
+    responses={404: {"model": ErrorMessage, "description": "The game does not exist"}},
+)
 async def join_game(room_code: str, player: Player):
     """
     Join an existing game
     """
     service = GhostService()
-    return service.add_player(room_code, player)
+    try:
+        return service.add_player(room_code, player)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
 
 
-# TODO: kick player
+@app.delete(
+    "/game/{room_code}/player",
+    response_model=GameInfo,
+    responses={404: {"model": ErrorMessage, "description": "The game does not exist"}},
+)
+async def remove_player(room_code: str, player: Player):
+    """
+    Remove a player from a game
+    """
+    service = GhostService()
+    try:
+        return service.remove_player(room_code, player)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
 
 
 #: Handler for optional serverless deployment of FastAPI app

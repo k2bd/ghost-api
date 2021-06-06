@@ -19,6 +19,8 @@ To run all tests: `poe test`
 
 ### Running a local development server
 
-`poe local-server`  # TODO
+To run a local development server: `poe local-server`
+
+This requires the local DynamoDB instance to be running (i.e. by running `docker-compose up`)
 
 API docs are then available on http://127.0.0.1:8000/docs

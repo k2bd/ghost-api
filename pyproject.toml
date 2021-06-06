@@ -20,6 +20,7 @@ mypy = "^0.812"
 isort = "^5.8.0"
 poethepoet = "^0.10.0"
 black = "^21.5b2"
+uvicorn = "^0.14.0"
 
 [tool.isort]
 profile = "black"
@@ -46,7 +47,19 @@ sequence = [
 
 [tool.poe.tasks.test.env]
 GHOST_GAMES_TABLE_NAME = "games"
-LOCAL_DYNAMODB_ENDPOINT = "http://localhost:8000"
+LOCAL_DYNAMODB_ENDPOINT = "http://localhost:8001"
+# Env vars required by boto3
+AWS_DEFAULT_REGION = "fake-region"
+AWS_ACCESS_KEY_ID = "fake-key"
+AWS_SECRET_ACCESS_KEY = "fake-secret-key"
+
+
+[tool.poe.tasks.local-server]
+sequence = [{shell = "uvicorn ghost_api.api:app --reload"}]
+
+[tool.poe.tasks.local-server.env]
+GHOST_GAMES_TABLE_NAME = "games"
+LOCAL_DYNAMODB_ENDPOINT = "http://localhost:8001"
 # Env vars required by boto3
 AWS_DEFAULT_REGION = "fake-region"
 AWS_ACCESS_KEY_ID = "fake-key"

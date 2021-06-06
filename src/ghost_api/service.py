@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Attr
 
 from ghost_api.constants import AWS_REGION, GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
@@ -128,8 +129,7 @@ class GhostService:
 
         # TODO: validate move position
 
-        player_turns = {player.name: ind for ind, player in enumerate(game.players)}
-        new_player_ind = (player_turns[new_move.player.name] + 1) % len(game.players)
+        new_player_ind = (game.players.index(new_move.player) + 1) % len(game.players)
         new_player_name = game.players[new_player_ind].name
 
         self.games_table.update_item(
@@ -142,8 +142,36 @@ class GhostService:
         )
         return self.read_game(room_code)
 
-    def remove_player(self, room_code: str, player_name: str) -> GameInfo:
+    def remove_player(self, room_code: str, player: Player) -> GameInfo:
         """
         Remove a player from the game, updating the turn player if necessary.
         """
-        raise NotImplementedError("TODO")
+        game = self.read_game(room_code)
+        new_player_list = game.players.copy()
+
+        try:
+            new_player_list.remove(player)
+        except ValueError:
+            return game
+
+        turn_player_name = game.turn_player_name
+        if turn_player_name == player.name:
+            # Pass to the next player
+            player_index = game.players.index(player)
+            if len(new_player_list) == 0:
+                turn_player_name = None
+            else:
+                turn_player = new_player_list[player_index % len(new_player_list)]
+                turn_player_name = turn_player.name
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=("set turn_player_name=:t, players=:p"),
+            ExpressionAttributeValues={
+                ":t": turn_player_name,
+                ":p": [player.dict() for player in new_player_list],
+            },
+            ConditionExpression=Attr("players").eq(game.dict()["players"]),
+        )
+
+        return self.read_game(room_code)

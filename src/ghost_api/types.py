@@ -12,8 +12,11 @@ class Move(CamelModel):
     #: Player that made the move
     player: Player
 
-    #: 0-indexed (x, y) position of the move
-    position: Tuple[int, int]
+    #: 0-indexed x-position of the move
+    position_x: int
+
+    #: 0-indexed y-position of the move
+    position_y: int
 
     #: Letter played
     letter: str

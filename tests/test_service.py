@@ -1,3 +1,4 @@
+from os import read
 import pytest
 
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
@@ -130,7 +131,8 @@ def test_add_move(service):
 
     new_move1 = Move(
         player=new_player1,
-        position=(0, 0),
+        position_x=0,
+        position_y=0,
         letter="Z",
     )
 
@@ -142,7 +144,8 @@ def test_add_move(service):
 
     new_move2 = Move(
         player=new_player2,
-        position=(0, 1),
+        position_x=0,
+        position_y=1,
         letter="U",
     )
 
@@ -166,7 +169,8 @@ def test_add_move_wrong_player(service):
 
     new_move = Move(
         player=new_player2,
-        position=(0, 0),
+        position_x=0,
+        position_y=0,
         letter="U",
     )
 
@@ -187,7 +191,8 @@ def test_add_move_empty_game(service):
     new_player = Player(name="player1")
     new_move = Move(
         player=new_player,
-        position=(0, 0),
+        position_x=0,
+        position_y=0,
         letter="U",
     )
 
@@ -196,4 +201,68 @@ def test_add_move_empty_game(service):
 
     read_game = service.read_game("AAAA")
     assert read_game.moves == []
+    assert read_game.turn_player_name is None
+
+
+def test_remove_player_turn_player(service):
+    """
+    Removing the turn player removes them from the players list and passes to
+    the next player's turn
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player=new_player1,
+        position_x=0,
+        position_y=0,
+        letter="Z",
+    )
+    current_game = service.add_move("AAAA", new_move)
+
+    assert current_game.turn_player_name == "player2"
+
+    service.remove_player("AAAA", new_player2)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.players == [new_player1]
+    assert read_game.turn_player_name == "player1"
+
+def test_remove_player_other_player(service):
+    """
+    Removing a player who isn't the turn player removes them from the players
+    list
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    current_game = service.add_player("AAAA", new_player2)
+
+    assert current_game.turn_player_name == "player1"
+
+    service.remove_player("AAAA", new_player2)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.players == [new_player1]
+    assert read_game.turn_player_name == "player1"
+
+def test_remove_player_only_player(service):
+    """
+    Removing the only player resets the turn player to None
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+
+    service.remove_player("AAAA", new_player1)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.players == []
     assert read_game.turn_player_name is None
