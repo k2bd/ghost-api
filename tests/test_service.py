@@ -1,7 +1,7 @@
 import pytest
 
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
-from ghost_api.types import GameInfo, Move, Player
+from ghost_api.types import GameInfo, Move, Player, Position
 
 
 def test_create_game(service):
@@ -130,8 +130,7 @@ def test_add_move(service):
 
     new_move1 = Move(
         player_name="player1",
-        position_x=0,
-        position_y=0,
+        position=Position(x=0, y=0),
         letter="Z",
     )
 
@@ -143,8 +142,7 @@ def test_add_move(service):
 
     new_move2 = Move(
         player_name="player2",
-        position_x=0,
-        position_y=1,
+        position=Position(x=0, y=1),
         letter="U",
     )
 
@@ -168,8 +166,7 @@ def test_add_move_wrong_player(service):
 
     new_move = Move(
         player_name="player2",
-        position_x=0,
-        position_y=0,
+        position=Position(x=0, y=0),
         letter="U",
     )
 
@@ -189,8 +186,7 @@ def test_add_move_empty_game(service):
 
     new_move = Move(
         player_name="player1",
-        position_x=0,
-        position_y=0,
+        position=Position(x=0, y=0),
         letter="U",
     )
 
@@ -216,8 +212,7 @@ def test_remove_player_turn_player(service):
 
     new_move = Move(
         player_name="player1",
-        position_x=0,
-        position_y=0,
+        position=Position(x=0, y=0),
         letter="Z",
     )
     current_game = service.add_move("AAAA", new_move)

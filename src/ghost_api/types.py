@@ -8,15 +8,20 @@ class Player(CamelModel):
     name: str
 
 
+class Position(CamelModel):
+    #: 0-indexed x-position of the move
+    x: int
+
+    #: 0-indexed y-position of the move
+    y: int
+
+
 class Move(CamelModel):
     #: Player that made the move
     player_name: str
 
-    #: 0-indexed x-position of the move
-    position_x: int
-
-    #: 0-indexed y-position of the move
-    position_y: int
+    #: Postion of the move
+    position: Position
 
     #: Letter played
     letter: str

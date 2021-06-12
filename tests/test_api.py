@@ -1,4 +1,4 @@
-from ghost_api.types import Move, Player
+from ghost_api.types import Move, Player, Position
 
 
 def test_get_game_200(service, api_client):
@@ -10,8 +10,7 @@ def test_get_game_200(service, api_client):
     service.add_player("ABCD", player1)
     move = Move(
         player_name="player1",
-        position_x=0,
-        position_y=0,
+        position=Position(x=0, y=0),
         letter="K",
     )
     service.add_move("ABCD", move)
@@ -24,8 +23,10 @@ def test_get_game_200(service, api_client):
         "moves": [
             {
                 "playerName": "player1",
-                "positionX": 0,
-                "positionY": 0,
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                },
                 "letter": "K",
             }
         ],
@@ -99,8 +100,10 @@ def test_post_move_200(service, api_client):
 
     new_move_json = {
         "playerName": "player1",
-        "positionX": 0,
-        "positionY": 0,
+        "position": {
+            "x": 0,
+            "y": 0,
+        },
         "letter": "U",
     }
 
@@ -124,8 +127,10 @@ def test_post_move_404(service, api_client):
     """
     new_move_json = {
         "playerName": "player1",
-        "positionX": 0,
-        "positionY": 0,
+        "position": {
+            "x": 0,
+            "y": 0,
+        },
         "letter": "U",
     }
     response = api_client.post(
@@ -149,8 +154,10 @@ def test_post_move_409(service, api_client):
 
     new_move_json = {
         "playerName": "player2",
-        "positionX": 0,
-        "positionY": 0,
+        "position": {
+            "x": 0,
+            "y": 0,
+        },
         "letter": "U",
     }
 
