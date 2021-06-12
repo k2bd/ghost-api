@@ -9,6 +9,8 @@ To get started, install [Poetry](https://python-poetry.org/), then `poetry insta
 
 If Poetry is managing a virtual environment for you, you may have to replace `poe` with `poetry run poe` in the commands described below.
 
+Docker is also required to run a local DynamoDB instance during tests and when running a development local server.
+
 ### Linting and running tests
 
 To autoformat the code: `poe autoformat`
