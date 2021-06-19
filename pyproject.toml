@@ -56,7 +56,11 @@ AWS_SECRET_ACCESS_KEY = "fake-secret-key"
 
 
 [tool.poe.tasks.local-server]
-sequence = [{shell = "uvicorn ghost_api.api:app --reload"}]
+sequence = [
+    {shell = "docker-compose up -d"},
+    {shell = "python scripts/create-local-table.py"},
+    {shell = "trap 'docker-compose down' EXIT; uvicorn ghost_api.api:app --reload"},
+]
 
 [tool.poe.tasks.local-server.env]
 GHOST_GAMES_TABLE_NAME = "games"

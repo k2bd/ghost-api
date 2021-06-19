@@ -7,7 +7,17 @@ from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlaye
 from ghost_api.service import GhostService
 from ghost_api.types import GameInfo, Move, Player
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ErrorMessage(CamelModel):
