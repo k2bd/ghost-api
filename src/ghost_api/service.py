@@ -44,9 +44,10 @@ class GhostService:
         """
         try:
             self.read_game(room_code)
-            raise GameAlreadyExists(f"Game {room_code!r} already exists")
         except GameDoesNotExist:
             self.games_table.put_item(Item=dict(new_game(room_code)))
+        else:
+            raise GameAlreadyExists(f"Game {room_code!r} already exists")
 
         return self.read_game(room_code)
 
