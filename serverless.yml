@@ -7,14 +7,13 @@ package:
   exclude:
     - ./**
   include:
-    - src/**
+    - ./src/**
 
 provider:
   name: aws
   runtime: python3.8
-  timeout: 20
+  timeout: 5
   environment:
-    DEPLOY_STAGE: ${opt:stage}
     GHOST_GAMES_TABLE_NAME: !Ref GamesTable
   iamRoleStatements:
     - Effect: Allow
@@ -33,9 +32,9 @@ provider:
 functions:
   api:
     description: 2D Ghost REST API
-    handler: ghost_api.api.handler
+    handler: src.ghost_api.api.handler
     memorySize: 128
-    module: src
+    maximumRetryAttempts: 0
     events:
       - http: ANY /
       - http:
