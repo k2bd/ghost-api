@@ -103,6 +103,7 @@ class GhostService:
                 ":p": [new_player.dict()],
                 ":t": turn_player_name,
             },
+            ConditionExpression=Attr("players").eq(game.dict()["players"]),
         )
         return self.read_game(room_code)
 
