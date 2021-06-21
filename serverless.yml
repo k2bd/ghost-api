@@ -4,6 +4,12 @@ plugins:
   - serverless-python-requirements
 
 
+package:
+  individually: true
+  exclude:
+    - ./**
+
+
 provider:
   name: aws
   runtime: python3.8
@@ -30,12 +36,10 @@ functions:
     handler: ghost_api.api.handler
     memorySize: 128
     module: src
+    maximumRetryAttempts: 0
     package:
-      exclude:
-        - ./**
       include:
         - ./src/**
-    maximumRetryAttempts: 0
     events:
       - http: ANY /
       - http:
