@@ -13,25 +13,30 @@ def games_table():
         raise EnvironmentError("Please set LOCAL_DYNAMODB_ENDPOINT")
 
     dynamodb_client = boto3.client("dynamodb", endpoint_url=LOCAL_DYNAMODB_ENDPOINT)
-    table = dynamodb_client.create_table(
-        TableName=GAMES_TABLE_NAME,
-        KeySchema=[
-            {
-                "AttributeName": "room_code",
-                "KeyType": "HASH",
+
+    try:
+        table = dynamodb_client.create_table(
+            TableName=GAMES_TABLE_NAME,
+            KeySchema=[
+                {
+                    "AttributeName": "room_code",
+                    "KeyType": "HASH",
+                },
+            ],
+            AttributeDefinitions=[
+                {
+                    "AttributeName": "room_code",
+                    "AttributeType": "S",
+                },
+            ],
+            ProvisionedThroughput={
+                "ReadCapacityUnits": 100,
+                "WriteCapacityUnits": 100,
             },
-        ],
-        AttributeDefinitions=[
-            {
-                "AttributeName": "room_code",
-                "AttributeType": "S",
-            },
-        ],
-        ProvisionedThroughput={
-            "ReadCapacityUnits": 100,
-            "WriteCapacityUnits": 100,
-        },
-    )
+        )
+    except dynamodb_client.exceptions.ResourceInUseException:
+        print("Using existing games table")
+        return
 
     exists_waiter = dynamodb_client.get_waiter("table_exists")
 

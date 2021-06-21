@@ -1,0 +1,9 @@
+{
+    "name": "ghost-api",
+    "description": "",
+    "version": "0.1.0",
+    "devDependencies": {
+        "serverless": "^2.48.0",
+        "serverless-python-requirements": "^5.1.1"
+    }
+}

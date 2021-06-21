@@ -23,4 +23,8 @@ To run all tests: `poe test`
 
 To start the testing DynamoDB instance and run a local development server: `poe local-server`
 
-Nicely rendered API docs are then available on http://127.0.0.1:8000/redoc
+Nicely rendered API docs are then available on http://127.0.0.1:8000/redoc.
+
+This also creates the games table so the API is functional for local apps.
+
+(Note: if the server is terminated with keyboard interrupt then the DynamoDB instance will have to be torn down manually for now)
