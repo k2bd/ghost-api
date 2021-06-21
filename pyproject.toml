@@ -21,6 +21,7 @@ isort = "^5.8.0"
 poethepoet = "^0.10.0"
 black = "^21.5b2"
 uvicorn = "^0.14.0"
+requests = "^2.25.1"
 
 [tool.isort]
 profile = "black"
