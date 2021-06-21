@@ -1,4 +1,5 @@
 [![CI](https://github.com/k2bd/ghost-api/actions/workflows/ci.yml/badge.svg)](https://github.com/k2bd/ghost-api/actions/workflows/ci.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/k2bd/ghost-api)](https://app.codecov.io/gh/k2bd/ghost-api)
 
 # API for 2D Ghost
 
