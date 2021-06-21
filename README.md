@@ -1,3 +1,5 @@
+[![CI](https://github.com/k2bd/ghost-api/actions/workflows/ci.yml/badge.svg)](https://github.com/k2bd/ghost-api/actions/workflows/ci.yml)
+
 # API for 2D Ghost
 
 ## What is 2D Ghost?
