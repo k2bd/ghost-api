@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_camelcase import CamelModel
 from mangum import Mangum
@@ -6,8 +7,6 @@ from mangum import Mangum
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
 from ghost_api.service import GhostService
 from ghost_api.types import GameInfo, Move, Player
-
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
