@@ -56,6 +56,6 @@ resources:
         AttributeDefinitions:
           - AttributeName: room_code
             AttributeType: S
-        ProvisionedThoughput:
+        ProvisionedThroughput:
           ReadCapacityUnits: 10
           WriteCapacityUnits: 10
