@@ -35,7 +35,6 @@ async def get_game_info(room_code: str):
     Get game info of an existing game
     """
     service = GhostService()
-
     try:
         return service.read_game(room_code)
     except GameDoesNotExist as e:
@@ -53,7 +52,6 @@ async def new_game(room_code: str):
     Create a new game
     """
     service = GhostService()
-
     try:
         return service.create_game(room_code)
     except GameAlreadyExists as e:
@@ -83,7 +81,6 @@ async def post_new_move(room_code: str, move: Move):
     Make a move in an existing game
     """
     service = GhostService()
-
     try:
         return service.add_move(room_code, move)
     except WrongPlayerMoved as e:
