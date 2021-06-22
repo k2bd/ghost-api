@@ -1,9 +1,9 @@
-name: Deploy to AWS
+name: Destroy stale deployments
 
-on: [push]
+on: [delete]
 
 jobs:
-  deploy:
+  destroy:
 
     runs-on: ubuntu-latest
 
@@ -22,10 +22,16 @@ jobs:
       uses: abatilo/actions-poetry@v2.0.0
       with:
         poetry-version: 1.1.4
-    - name: Serverless Deploy
-      uses: dhollerbach/github-action-serverless-with-python-requirements@master
-      with:
-        args: '--stage ${BRANCH_NAME}'
+    - name: Prepare serverless
+      run: |
+        echo Installing Serverless
+        npm i serverless -g
+        npm i serverless-python-requirements
+    - name: Remove deployment
+      run:
+        echo Removing deployment ${BRANCH_NAME}
+        sls config credentials --provider aws --key ${process.env.AWS_ACCESS_KEY_ID} --secret ${process.env.AWS_SECRET_ACCESS_KEY}
+        serverless remove --stage ${BRANCH_NAME}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
