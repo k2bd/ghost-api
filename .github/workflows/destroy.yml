@@ -1,4 +1,4 @@
-name: Destroy stale deployments
+name: Destroy stale deployment
 
 on: [delete]
 
@@ -9,7 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: nelonoel/branch-name@v1.0.1
+    - name: Get deleted branch name
+      run: |
+        echo "::set-env name=GITHUB_REF::${{ github.ref }}"
+        echo "old GITHUB_REF is $GITHUB_REF"
+        GITHUB_REF=$(echo $GITHUB_REF | sed -e "s#refs/heads/##g")
+        echo "new GITHUB_REF is $GITHUB_REF"
     - name: install python
       uses: actions/setup-python@v2
       with:
@@ -28,10 +33,10 @@ jobs:
         npm i serverless -g
         npm i serverless-python-requirements
     - name: Remove deployment
-      run:
-        echo Removing deployment ${BRANCH_NAME}
+      run: |
+        echo Removing deployment ${GITHUB_REF}
         sls config credentials --provider aws --key ${AWS_ACCESS_KEY_ID} --secret ${AWS_SECRET_ACCESS_KEY}
-        serverless remove --stage ${BRANCH_NAME}
+        serverless remove --stage ${GITHUB_REF}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
