@@ -30,7 +30,7 @@ jobs:
     - name: Remove deployment
       run:
         echo Removing deployment ${BRANCH_NAME}
-        sls config credentials --provider aws --key ${process.env.AWS_ACCESS_KEY_ID} --secret ${process.env.AWS_SECRET_ACCESS_KEY}
+        sls config credentials --provider aws --key ${AWS_ACCESS_KEY_ID} --secret ${AWS_SECRET_ACCESS_KEY}
         serverless remove --stage ${BRANCH_NAME}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_ACCESS_KEY }}
