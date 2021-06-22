@@ -165,7 +165,7 @@ class GhostService:
                 msg.format(game.turn_player_name, new_move.player_name)
             )
 
-        # TODO: validate move position
+        # TODO: validate move position and value
 
         player_indexes = {player.name: ind for ind, player in enumerate(game.players)}
         new_player_ind = (player_indexes[new_move.player_name] + 1) % len(game.players)
@@ -178,5 +178,6 @@ class GhostService:
                 ":p": new_player_name,
                 ":m": [new_move.dict()],
             },
+            ConditionExpression=Attr("moves").eq(game.dict()["moves"]),
         )
         return self.read_game(room_code)
