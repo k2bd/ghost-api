@@ -5,8 +5,11 @@ from fastapi_camelcase import CamelModel
 from mangum import Mangum
 
 from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
+from ghost_api.logging import get_logger
 from ghost_api.service import GhostService
 from ghost_api.types import GameInfo, Move, Player
+
+logger = get_logger()
 
 app = FastAPI()
 
@@ -34,6 +37,8 @@ async def get_game_info(room_code: str):
     """
     Get game info of an existing game
     """
+    logger.info("GET game/%s", room_code)
+
     service = GhostService()
     try:
         return service.read_game(room_code)
@@ -51,6 +56,8 @@ async def new_game(room_code: str):
     """
     Create a new game
     """
+    logger.info("POST game/%s", room_code)
+
     service = GhostService()
     try:
         return service.create_game(room_code)
@@ -64,6 +71,8 @@ async def delete_game(room_code: str) -> None:
     Delete an existing game, so a new game can be started with the same room
     code
     """
+    logger.info("DELETE game/%s", room_code)
+
     service = GhostService()
     service.delete_game(room_code)
 
@@ -80,6 +89,8 @@ async def post_new_move(room_code: str, move: Move):
     """
     Make a move in an existing game
     """
+    logger.info("POST game/%s/move: %s", room_code, move.dict())
+
     service = GhostService()
     try:
         return service.add_move(room_code, move)
@@ -98,6 +109,8 @@ async def join_game(room_code: str, player: Player):
     """
     Join an existing game
     """
+    logger.info("POST game/%s/player: %s", room_code, player.dict())
+
     service = GhostService()
     try:
         return service.add_player(room_code, player)
@@ -114,6 +127,8 @@ async def remove_player(room_code: str, player_name: str):
     """
     Remove a player from a game
     """
+    logger.info("DELETE game/%s/player/%s", room_code, player_name)
+
     service = GhostService()
     try:
         return service.remove_player(room_code, player_name)
