@@ -3,6 +3,8 @@
 
 # API for 2D Ghost
 
+API and database service for my [2D Ghost App](k2bd.github.com/ghost-app).
+
 ## What is 2D Ghost?
 
 2D Ghost is a word game where players take turns building up words in a grid, trying to avoid completing words while trying to trap other players into completing words. (TODO: full description)
