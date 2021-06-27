@@ -2,8 +2,21 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 
 from ghost_api.constants import AWS_REGION, GAMES_TABLE_NAME, LOCAL_DYNAMODB_ENDPOINT
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
-from ghost_api.types import GameInfo, Move, Player
+from ghost_api.exceptions import (
+    GameAlreadyExists,
+    GameDoesNotExist,
+    InvalidMove,
+    WrongPlayer,
+)
+from ghost_api.types import (
+    Challenge,
+    ChallengeState,
+    ChallengeType,
+    GameInfo,
+    Move,
+    NewChallenge,
+    Player,
+)
 
 
 def dynamodb():
@@ -25,6 +38,7 @@ def new_game(room_code: str) -> GameInfo:
         players=[],
         turn_player_name=None,
         moves=[],
+        challenge=None,
     )
 
 
@@ -154,16 +168,19 @@ class GhostService:
         ------
         GameDoesNotExist
             If the game doesn't exist
-        WrongPlayerMoved
+        WrongPlayer
             If a player other than the turn player is making the move
+        InvalidMove
+            If the move cannot be made
         """
         game = self.read_game(room_code)
 
+        if game.challenge is not None:
+            raise InvalidMove(f"Game {room_code!r} has an open challenge")
+
         if game.turn_player_name != new_move.player_name:
             msg = "Turn player is {!r} but {!r} tried to move"
-            raise WrongPlayerMoved(
-                msg.format(game.turn_player_name, new_move.player_name)
-            )
+            raise WrongPlayer(msg.format(game.turn_player_name, new_move.player_name))
 
         # TODO: validate move position and value
 
@@ -180,4 +197,57 @@ class GhostService:
             },
             ConditionExpression=Attr("moves").eq(game.dict()["moves"]),
         )
+        return self.read_game(room_code)
+
+    def create_challenge(
+        self,
+        room_code: str,
+        challenge: NewChallenge,
+    ) -> GameInfo:
+        """
+        Create a new challenge of a given move
+
+        Raises
+        ------
+        GameDoesNotExist
+            If the game doesn't exist
+        WrongPlayer
+            If a player other than the turn player is making the move
+        InvalidMove
+            If the challenge cannot be made
+        """
+        game = self.read_game(room_code)
+
+        if game.challenge is not None:
+            raise InvalidMove(f"Game {room_code!r} already has an open challenge")
+
+        if challenge.challenger_name not in [player.name for player in game.players]:
+            msg = f"Player {challenge.challenger_name!r} not in game {room_code!r}"
+            raise InvalidMove(msg)
+
+        if (len(game.moves) == 0) or (challenge.move != game.moves[-1]):
+            raise InvalidMove("Can only challenge the most recent move")
+
+        initial_state = (
+            ChallengeState.AWAIATING_RESPONSE
+            if challenge.type is ChallengeType.NO_VALID_WORDS
+            else ChallengeState.VOTING
+        )
+
+        game_challenge = Challenge(
+            challenger_name=challenge.challenger_name,
+            move=challenge.move,
+            type=challenge.type,
+            state=initial_state,
+            response=None,
+            votes=[],
+        )
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=("set challenge=:c"),
+            ExpressionAttributeValues={":c": game_challenge.dict()},
+            ConditionExpression=Attr("challenge").eq(None),
+        )
+
         return self.read_game(room_code)

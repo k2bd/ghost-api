@@ -1,3 +1,5 @@
+import pytest
+
 from ghost_api.types import Move, Player, Position
 
 
@@ -169,6 +171,13 @@ def test_post_move_409(service, api_client):
     assert "Turn player is 'player1' but 'player2' tried to move"
 
 
+def test_add_move_pending_challenge_todo(service, api_client):
+    """
+    Cannot add a move when there's a pending challenge
+    """
+    pytest.fail()
+
+
 def test_post_player_200(service, api_client):
     """
     POST /game/{room_code}/player OK
@@ -226,3 +235,10 @@ def test_delete_player_404(service, api_client):
 
     assert response.status_code == 404
     assert response.json() == {"message": "Game 'ABCD' does not exist"}
+
+
+def test_create_challenge_todo(service, api_client):
+    """
+    Tests related to creating challenges
+    """
+    pytest.fail()

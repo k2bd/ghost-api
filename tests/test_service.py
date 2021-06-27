@@ -1,6 +1,6 @@
 import pytest
 
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
+from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayer
 from ghost_api.types import GameInfo, Move, Player, Position
 
 
@@ -170,7 +170,7 @@ def test_add_move_wrong_player(service):
         letter="U",
     )
 
-    with pytest.raises(WrongPlayerMoved):
+    with pytest.raises(WrongPlayer):
         service.add_move("AAAA", new_move)
 
     read_game = service.read_game("AAAA")
@@ -190,12 +190,19 @@ def test_add_move_empty_game(service):
         letter="U",
     )
 
-    with pytest.raises(WrongPlayerMoved):
+    with pytest.raises(WrongPlayer):
         service.add_move("AAAA", new_move)
 
     read_game = service.read_game("AAAA")
     assert read_game.moves == []
     assert read_game.turn_player_name is None
+
+
+def test_add_move_pending_challenge(service):
+    """
+    Cannot add a move when there's a pending challenge
+    """
+    pytest.fail()
 
 
 def test_remove_player_turn_player(service):
@@ -277,3 +284,10 @@ def test_remove_player_nonexistent_player(service):
     read_game = service.read_game("AAAA")
     assert read_game.players == [new_player1]
     assert read_game.turn_player_name == "player1"
+
+
+def test_create_challenge_todo(service):
+    """
+    Tests related to creating challenges
+    """
+    pytest.fail()

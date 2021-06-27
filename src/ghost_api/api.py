@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi_camelcase import CamelModel
 from mangum import Mangum
 
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
+from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayer
 from ghost_api.logging import get_logger
 from ghost_api.service import GhostService
 from ghost_api.types import GameInfo, Move, Player
@@ -94,7 +94,7 @@ async def post_new_move(room_code: str, move: Move):
     service = GhostService()
     try:
         return service.add_move(room_code, move)
-    except WrongPlayerMoved as e:
+    except WrongPlayer as e:
         return JSONResponse(status_code=409, content={"message": str(e)})
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
