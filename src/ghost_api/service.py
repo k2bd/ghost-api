@@ -272,8 +272,8 @@ class GhostService:
             msg = f"No challenge exists on game {room_code!r}"
             raise InvalidMove(msg)
         if game.challenge.state != ChallengeState.AWAITING_RESPONSE:
-            msg = f"Challenge is in {game.challenge.state!r} state, not AWAITING_RESPONSE"
-            raise InvalidMove(msg)
+            msg = "Challenge is in {!r} state, not 'AWAITING_RESPONSE'"
+            raise InvalidMove(msg.format(game.challenge.state.value))
 
         self.games_table.update_item(
             Key={"room_code": room_code},
