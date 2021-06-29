@@ -257,7 +257,7 @@ class GhostService:
         challenge_response: ChallengeResponse,
     ) -> GameInfo:
         """
-        Create a new challenge of a given move
+        Create respond to a challenge in the AWAITING_RESPONSE state
 
         Raises
         ------
@@ -268,8 +268,8 @@ class GhostService:
         """
         game = self.read_game(room_code)
 
-        if game.challenge is None or game.challenge.type != ChallengeType.NO_VALID_WORDS:
-            msg = "Challenge response can only be made to a NO_VALID_WORDS challenge"
+        if game.challenge is None:
+            msg = f"No challenge exists on game {room_code!r}"
             raise InvalidMove(msg)
         if game.challenge.state != ChallengeState.AWAITING_RESPONSE:
             msg = f"Challenge is in {game.challenge.state!r} state, not AWAITING_RESPONSE"
@@ -277,12 +277,17 @@ class GhostService:
 
         self.games_table.update_item(
             Key={"room_code": room_code},
-            UpdateExpression=("set challenge.response=:r, challenge.state=:s"),
+            UpdateExpression=("set challenge.#chalresp=:r, challenge.#chalstate=:s"),
             ExpressionAttributeValues={
                 ":r": challenge_response.dict(),
                 ":s": ChallengeState.VOTING,
             },
-            ConditionExpression=Attr("challenge").eq(game.challenge),
+            ExpressionAttributeNames={
+                # "response" and "state" are reserved words
+                "#chalstate": "state",
+                "#chalresp": "response",
+            },
+            ConditionExpression=Attr("challenge").eq(game.dict()["challenge"]),
         )
 
         return self.read_game(room_code)

@@ -8,6 +8,7 @@ from ghost_api.exceptions import (
 )
 from ghost_api.types import (
     Challenge,
+    ChallengeResponse,
     ChallengeState,
     ChallengeType,
     GameInfo,
@@ -499,3 +500,107 @@ def test_create_challenge_no_moves(service):
     )
     with pytest.raises(InvalidMove):
         service.create_challenge("AAAA", challenge)
+
+
+def test_create_challenge_response(service):
+    """
+    Can submit a response to an active AWAITING_RESPONSE challenge
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    challenge_response = ChallengeResponse(
+        row_word="UMBRELLA",
+        col_word="UPPER",
+    )
+    service.create_challenge_response("AAAA", challenge_response)
+
+    expected_challenge = Challenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+        state=ChallengeState.VOTING,
+        response=challenge_response,
+        votes=[],
+    )
+
+    read_game = service.read_game("AAAA")
+    assert read_game.challenge == expected_challenge
+
+
+def test_create_challenge_response_no_challenge(service):
+    """
+    Cannot respond to a challenge if the game doesn't have an active challenge
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge_response = ChallengeResponse(
+        row_word="UMBRELLA",
+        col_word="UPPER",
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge_response("AAAA", challenge_response)
+
+
+def test_create_challenge_response_wrong_state(service):
+    """
+    Cannot respond to a challenge not in the AWAITING_RESPONSE state
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    # COMPLETE_WORD does not require a response - goes right to voting
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.COMPLETE_WORD,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    challenge_response = ChallengeResponse(
+        row_word="UMBRELLA",
+        col_word="UPPER",
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge_response("AAAA", challenge_response)
