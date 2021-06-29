@@ -10,6 +10,7 @@ from ghost_api.exceptions import (
 )
 from ghost_api.types import (
     Challenge,
+    ChallengeResponse,
     ChallengeState,
     ChallengeType,
     GameInfo,
@@ -246,6 +247,42 @@ class GhostService:
             UpdateExpression=("set challenge=:c"),
             ExpressionAttributeValues={":c": game_challenge.dict()},
             ConditionExpression=Attr("challenge").eq(None),
+        )
+
+        return self.read_game(room_code)
+
+    def create_challenge_response(
+        self,
+        room_code: str,
+        challenge_response: ChallengeResponse,
+    ) -> GameInfo:
+        """
+        Create a new challenge of a given move
+
+        Raises
+        ------
+        GameDoesNotExist
+            If the game doesn't exist
+        InvalidMove
+            If the challenge response is invalid
+        """
+        game = self.read_game(room_code)
+
+        if game.challenge is None or game.challenge.type != ChallengeType.NO_VALID_WORDS:
+            msg = "Challenge response can only be made to a NO_VALID_WORDS challenge"
+            raise InvalidMove(msg)
+        if game.challenge.state != ChallengeState.AWAITING_RESPONSE:
+            msg = f"Challenge is in {game.challenge.state!r} state, not AWAITING_RESPONSE"
+            raise InvalidMove(msg)
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=("set challenge.response=:r, challenge.state=:s"),
+            ExpressionAttributeValues={
+                ":r": challenge_response.dict(),
+                ":s": ChallengeState.VOTING,
+            },
+            ConditionExpression=Attr("challenge").eq(game.challenge),
         )
 
         return self.read_game(room_code)

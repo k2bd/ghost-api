@@ -12,7 +12,7 @@ from ghost_api.exceptions import (
 )
 from ghost_api.logging import get_logger
 from ghost_api.service import GhostService
-from ghost_api.types import GameInfo, Move, NewChallenge, Player
+from ghost_api.types import ChallengeResponse, GameInfo, Move, NewChallenge, Player
 
 logger = get_logger()
 
@@ -166,6 +166,40 @@ async def create_challenge(room_code: str, challenge: NewChallenge):
     service = GhostService()
     try:
         return service.create_challenge(room_code, challenge)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
+    except InvalidMove as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
+
+
+@app.post(
+    "/game/{room_code}/challenge-response",
+    response_model=GameInfo,
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't respond to this challenge right now",
+        },
+    },
+)
+async def create_challenge_resposne(
+    room_code: str,
+    challenge_response: ChallengeResponse,
+):
+    """
+    Respond to an existing challenge with valid words for the given row and
+    column
+    """
+    # TODO: responding player in the header to validate it's being sent by the
+    # right person
+    logger.info(
+        "POST /game/%s/challenge-response: %s", room_code, challenge_response.dict()
+    )
+
+    service = GhostService()
+    try:
+        return service.create_challenge_response(room_code, challenge_response)
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
     except InvalidMove as e:
