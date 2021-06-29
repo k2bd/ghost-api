@@ -3,7 +3,7 @@
 
 # API for 2D Ghost
 
-API and database service for my [2D Ghost App](k2bd.github.com/ghost-app).
+API and database service for my [2D Ghost App](https://ghost.k2bd.dev).
 
 ## What is 2D Ghost?
 
