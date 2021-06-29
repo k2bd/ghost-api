@@ -28,7 +28,7 @@ class Move(CamelModel):
     letter: str
 
 
-class ChallengeType(Enum, str):
+class ChallengeType(str, Enum):
     #: Challenged move completed a word in its row or column
     COMPLETE_WORD = "COMPLETE_WORD"
 
@@ -37,9 +37,9 @@ class ChallengeType(Enum, str):
     NO_VALID_WORDS = "NO_VALID_WORDS"
 
 
-class ChallengeState(Enum, str):
+class ChallengeState(str, Enum):
     #: Challenge awaiting a response
-    AWAIATING_RESPONSE = "AWAIATING_RESPONSE"
+    AWAITING_RESPONSE = "AWAITING_RESPONSE"
 
     #: Challenge waiting for votes to come in
     VOTING = "VOTING"

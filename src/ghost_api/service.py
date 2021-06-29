@@ -211,8 +211,6 @@ class GhostService:
         ------
         GameDoesNotExist
             If the game doesn't exist
-        WrongPlayer
-            If a player other than the turn player is making the move
         InvalidMove
             If the challenge cannot be made
         """
@@ -229,7 +227,7 @@ class GhostService:
             raise InvalidMove("Can only challenge the most recent move")
 
         initial_state = (
-            ChallengeState.AWAIATING_RESPONSE
+            ChallengeState.AWAITING_RESPONSE
             if challenge.type is ChallengeType.NO_VALID_WORDS
             else ChallengeState.VOTING
         )

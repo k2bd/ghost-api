@@ -1,7 +1,21 @@
 import pytest
 
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayer
-from ghost_api.types import GameInfo, Move, Player, Position
+from ghost_api.exceptions import (
+    GameAlreadyExists,
+    GameDoesNotExist,
+    InvalidMove,
+    WrongPlayer,
+)
+from ghost_api.types import (
+    Challenge,
+    ChallengeState,
+    ChallengeType,
+    GameInfo,
+    Move,
+    NewChallenge,
+    Player,
+    Position,
+)
 
 
 def test_create_game(service):
@@ -202,7 +216,35 @@ def test_add_move_pending_challenge(service):
     """
     Cannot add a move when there's a pending challenge
     """
-    pytest.fail()
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    #: Cannot make a move while there's an active challenge
+    invalid_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    with pytest.raises(InvalidMove):
+        service.add_move("AAAA", invalid_move)
 
 
 def test_remove_player_turn_player(service):
@@ -286,8 +328,174 @@ def test_remove_player_nonexistent_player(service):
     assert read_game.turn_player_name == "player1"
 
 
-def test_create_challenge_todo(service):
+def test_create_challenge(service):
     """
-    Tests related to creating challenges
+    Can create a new challenge if there's been a move
     """
-    pytest.fail()
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    expected_challenge = Challenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+        state=ChallengeState.AWAITING_RESPONSE,
+        response=None,
+        votes=[],
+    )
+
+    read_game = service.read_game("AAAA")
+    assert read_game.challenge == expected_challenge
+
+
+def test_create_challenge_second_challenge(service):
+    """
+    Cannot create a challenge when there's already a pending challenge
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+    new_player3 = Player(name="player3")
+    service.add_player("AAAA", new_player3)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    second_challenge = NewChallenge(
+        challenger_name="player3",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge("AAAA", second_challenge)
+
+    expected_challenge = Challenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+        state=ChallengeState.AWAITING_RESPONSE,
+        response=None,
+        votes=[],
+    )
+    read_game = service.read_game("AAAA")
+    assert read_game.challenge == expected_challenge
+
+
+def test_create_challenge_invalid_player(service):
+    """
+    A player that isn't joined can't make a challenge
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player5",
+        move=new_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge("AAAA", challenge)
+
+
+def test_create_challenge_previous_moves(service):
+    """
+    Can't challenge a move that isn't the most recent
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+    new_player2 = Player(name="player3")
+    service.add_player("AAAA", new_player2)
+
+    first_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", first_move)
+
+    second_move = Move(
+        player_name="player2",
+        position=Position(x=1, y=0),
+        letter="P",
+    )
+    service.add_move("AAAA", second_move)
+
+    challenge = NewChallenge(
+        challenger_name="player3",
+        move=first_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge("AAAA", challenge)
+
+
+def test_create_challenge_no_moves(service):
+    """
+    Can't challenge in a game with no moves
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    challenge_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    challenge = NewChallenge(
+        challenger_name="player1",
+        move=challenge_move,
+        type=ChallengeType.NO_VALID_WORDS,
+    )
+    with pytest.raises(InvalidMove):
+        service.create_challenge("AAAA", challenge)
