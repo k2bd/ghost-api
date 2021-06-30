@@ -100,6 +100,9 @@ class GameInfo(CamelModel):
     #: Players, in move order
     players: List[Player]
 
+    #: Players who have been kicked due to losing a challenge
+    losers: List[Player]
+
     #: Current turn player name
     turn_player_name: Optional[str]
 

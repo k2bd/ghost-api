@@ -13,6 +13,7 @@ from ghost_api.types import (
     ChallengeResponse,
     ChallengeState,
     ChallengeType,
+    ChallengeVote,
     GameInfo,
     Move,
     NewChallenge,
@@ -37,6 +38,7 @@ def new_game(room_code: str) -> GameInfo:
     return GameInfo(
         room_code=room_code,
         players=[],
+        losers=[],
         turn_player_name=None,
         moves=[],
         challenge=None,
@@ -66,7 +68,7 @@ class GhostService:
 
         return self.read_game(room_code)
 
-    def read_game(self, room_code: str) -> GameInfo:
+    def read_game(self, room_code: str, consistent=False) -> GameInfo:
         """
         Read a game state from the database
 
@@ -75,7 +77,10 @@ class GhostService:
         GameDoesNotExist
             If the game doesn't exist
         """
-        response = self.games_table.get_item(Key={"room_code": room_code})
+        response = self.games_table.get_item(
+            Key={"room_code": room_code},
+            ConsistentRead=consistent,
+        )
 
         if "Item" not in response:
             raise GameDoesNotExist(f"Game {room_code!r} does not exist")
@@ -160,6 +165,29 @@ class GhostService:
 
         return self.read_game(room_code)
 
+    def _advance_turn(self, game: GameInfo) -> None:
+        if game.turn_player_name is None:
+            if len(game.players) == 0:
+                return
+            new_player_name = game.players[0].name
+        else:
+            player_indexes = {
+                player.name: ind for ind, player in enumerate(game.players)
+            }
+            new_player_ind = (player_indexes[game.turn_player_name] + 1) % len(
+                game.players
+            )
+            new_player_name = game.players[new_player_ind].name
+
+        self.games_table.update_item(
+            Key={"room_code": game.room_code},
+            UpdateExpression=("set turn_player_name=:p"),
+            ExpressionAttributeValues={
+                ":p": new_player_name,
+            },
+            ConditionExpression=Attr("players").eq(game.dict()["players"]),
+        )
+
     def add_move(self, room_code: str, new_move: Move) -> GameInfo:
         """
         Play a new move if it's made by the turn player, also updating the turn
@@ -185,19 +213,17 @@ class GhostService:
 
         # TODO: validate move position and value
 
-        player_indexes = {player.name: ind for ind, player in enumerate(game.players)}
-        new_player_ind = (player_indexes[new_move.player_name] + 1) % len(game.players)
-        new_player_name = game.players[new_player_ind].name
-
         self.games_table.update_item(
             Key={"room_code": room_code},
-            UpdateExpression=("set turn_player_name=:p, moves=list_append(moves, :m)"),
+            UpdateExpression=("set moves=list_append(moves, :m)"),
             ExpressionAttributeValues={
-                ":p": new_player_name,
                 ":m": [new_move.dict()],
             },
             ConditionExpression=Attr("moves").eq(game.dict()["moves"]),
         )
+
+        self._advance_turn(game)
+
         return self.read_game(room_code)
 
     def create_challenge(
@@ -249,6 +275,8 @@ class GhostService:
             ConditionExpression=Attr("challenge").eq(None),
         )
 
+        self._advance_turn(game)
+
         return self.read_game(room_code)
 
     def create_challenge_response(
@@ -257,7 +285,7 @@ class GhostService:
         challenge_response: ChallengeResponse,
     ) -> GameInfo:
         """
-        Create respond to a challenge in the AWAITING_RESPONSE state
+        Respond to a challenge in the AWAITING_RESPONSE state
 
         Raises
         ------
@@ -272,8 +300,9 @@ class GhostService:
             msg = f"No challenge exists on game {room_code!r}"
             raise InvalidMove(msg)
         if game.challenge.state != ChallengeState.AWAITING_RESPONSE:
-            msg = "Challenge is in {!r} state, not 'AWAITING_RESPONSE'"
-            raise InvalidMove(msg.format(game.challenge.state.value))
+            state = game.challenge.state.value
+            msg = f"Challenge is in {state!r} state, not 'AWAITING_RESPONSE'"
+            raise InvalidMove(msg)
 
         self.games_table.update_item(
             Key={"room_code": room_code},
@@ -289,5 +318,86 @@ class GhostService:
             },
             ConditionExpression=Attr("challenge").eq(game.dict()["challenge"]),
         )
+
+        return self.read_game(room_code)
+
+    def _complete_challenge(self, game: GameInfo) -> None:
+        if game.challenge is None:
+            raise ValueError("Cannot complete a nonexistent challenge")
+        # All votes in, apply the result
+        pro_challenge_votes = [
+            vote for vote in game.challenge.votes if vote.pro_challenge
+        ]
+        if len(pro_challenge_votes) / len(game.challenge.votes) < 0.5:
+            loser_name = game.challenge.challenger_name
+        else:
+            loser_name = game.challenge.move.player_name
+
+        if loser_name == game.turn_player_name:
+            self._advance_turn(game)
+
+        remaining_players = [
+            player for player in game.players if player.name != loser_name
+        ]
+        (loser,) = [player for player in game.players if player.name == loser_name]
+        self.games_table.update_item(
+            Key={"room_code": game.room_code},
+            UpdateExpression=(
+                "set challenge=:n, players=:p, losers=list_append(losers, :l)"
+            ),
+            ExpressionAttributeValues={
+                ":n": None,
+                ":p": [player.dict() for player in remaining_players],
+                ":l": [loser.dict()],
+            },
+            ConditionExpression=(
+                Attr("players").eq(game.dict()["players"])
+                & Attr("challenge").eq(game.dict()["challenge"])
+                & Attr("losers").eq(game.dict()["losers"])
+            ),
+        )
+
+    def add_challenge_vote(self, room_code: str, vote: ChallengeVote) -> GameInfo:
+        """
+        Vote on a challenge in the VOTING stage.
+
+        If everyone's votes are in, kick the loser and continue the game.
+
+        Raises
+        ------
+        GameDoesNotExist
+            If the game doesn't exist
+        InvalidMove
+            If the vote can't be cast
+        """
+        game = self.read_game(room_code)
+
+        if game.challenge is None:
+            msg = f"No challenge exists on game {room_code!r}"
+            raise InvalidMove(msg)
+        if game.challenge.state != ChallengeState.VOTING:
+            state = game.challenge.state.value
+            msg = f"Challenge is in {state!r} state, not 'VOTING'"
+            raise InvalidMove(msg)
+        if vote.voter_name in [v.voter_name for v in game.challenge.votes]:
+            raise InvalidMove(f"Player {vote.voter_name!r} has already voted")
+        if vote.voter_name not in [player.name for player in game.players]:
+            msg = f"Player {vote.voter_name!r} has not joined game {room_code!r}"
+            raise InvalidMove(msg)
+
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression=("set challenge.votes=list_append(challenge.votes, :v)"),
+            ExpressionAttributeValues={
+                ":v": [vote.dict()],
+            },
+            ConditionExpression=Attr("challenge").eq(game.dict()["challenge"]),
+        )
+
+        game = self.read_game(room_code, consistent=True)
+
+        if game.challenge is not None:
+            if len(game.challenge.votes) == len(game.players):
+                self._complete_challenge(game)
 
         return self.read_game(room_code)

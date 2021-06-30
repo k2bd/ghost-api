@@ -32,6 +32,7 @@ def test_get_game_200(service, api_client):
         ],
         "turnPlayerName": "player1",
         "challenge": None,
+        "losers": [],
     }
 
 
@@ -57,6 +58,7 @@ def test_post_game_201(service, api_client):
         "moves": [],
         "turnPlayerName": None,
         "challenge": None,
+        "losers": [],
     }
 
 
@@ -120,6 +122,7 @@ def test_post_move_200(service, api_client):
         "moves": [new_move_json],
         "turnPlayerName": "player2",
         "challenge": None,
+        "losers": [],
     }
 
 
@@ -229,6 +232,7 @@ def test_post_player_200(service, api_client):
         "moves": [],
         "turnPlayerName": "player1",
         "challenge": None,
+        "losers": [],
     }
 
 
@@ -262,6 +266,7 @@ def test_delete_player_200(service, api_client):
         "moves": [],
         "turnPlayerName": "player2",
         "challenge": None,
+        "losers": [],
     }
 
 
@@ -312,13 +317,14 @@ def test_post_challenge_200(service, api_client):
         "roomCode": "ABCD",
         "players": [{"name": "player1"}, {"name": "player2"}],
         "moves": [new_move_json],
-        "turnPlayerName": "player2",
+        "turnPlayerName": "player1",
         "challenge": {
             **new_challenge,
             "state": "AWAITING_RESPONSE",
             "response": None,
             "votes": [],
         },
+        "losers": [],
     }
 
 
@@ -431,13 +437,14 @@ def test_post_challenge_response_200(service, api_client):
         "roomCode": "ABCD",
         "players": [{"name": "player1"}, {"name": "player2"}],
         "moves": [new_move_json],
-        "turnPlayerName": "player2",
+        "turnPlayerName": "player1",
         "challenge": {
             **new_challenge,
             "state": "VOTING",
             "response": challenge_response,
             "votes": [],
         },
+        "losers": [],
     }
 
 
