@@ -4,10 +4,22 @@ from fastapi.responses import JSONResponse
 from fastapi_camelcase import CamelModel
 from mangum import Mangum
 
-from ghost_api.exceptions import GameAlreadyExists, GameDoesNotExist, WrongPlayerMoved
+from ghost_api.exceptions import (
+    GameAlreadyExists,
+    GameDoesNotExist,
+    InvalidMove,
+    WrongPlayer,
+)
 from ghost_api.logging import get_logger
 from ghost_api.service import GhostService
-from ghost_api.types import GameInfo, Move, Player
+from ghost_api.types import (
+    ChallengeResponse,
+    ChallengeVote,
+    GameInfo,
+    Move,
+    NewChallenge,
+    Player,
+)
 
 logger = get_logger()
 
@@ -82,7 +94,10 @@ async def delete_game(room_code: str) -> None:
     response_model=GameInfo,
     responses={
         404: {"model": ErrorMessage, "description": "The game does not exist"},
-        409: {"model": ErrorMessage, "description": "It's not this player's turn"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't post a move right now",
+        },
     },
 )
 async def post_new_move(room_code: str, move: Move):
@@ -94,7 +109,9 @@ async def post_new_move(room_code: str, move: Move):
     service = GhostService()
     try:
         return service.add_move(room_code, move)
-    except WrongPlayerMoved as e:
+    except WrongPlayer as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
+    except InvalidMove as e:
         return JSONResponse(status_code=409, content={"message": str(e)})
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
@@ -134,6 +151,89 @@ async def remove_player(room_code: str, player_name: str):
         return service.remove_player(room_code, player_name)
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
+
+
+@app.post(
+    "/game/{room_code}/challenge",
+    response_model=GameInfo,
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't this challenge right now",
+        },
+    },
+)
+async def create_challenge(room_code: str, challenge: NewChallenge):
+    """
+    Create a challenge on the most recent move
+    """
+    logger.info("POST /game/%s/challenge: %s", room_code, challenge.dict())
+
+    service = GhostService()
+    try:
+        return service.create_challenge(room_code, challenge)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
+    except InvalidMove as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
+
+
+@app.post(
+    "/game/{room_code}/challenge-response",
+    response_model=GameInfo,
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't respond to this challenge right now",
+        },
+    },
+)
+async def create_challenge_resposne(
+    room_code: str,
+    challenge_response: ChallengeResponse,
+):
+    """
+    Respond to an existing challenge with valid words for the given row and
+    column
+    """
+    # TODO: responding player in the header to validate it's being sent by the
+    # right person
+    logger.info(
+        "POST /game/%s/challenge-response: %s", room_code, challenge_response.dict()
+    )
+
+    service = GhostService()
+    try:
+        return service.create_challenge_response(room_code, challenge_response)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
+    except InvalidMove as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
+
+
+@app.post(
+    "/game/{room_code}/challenge-vote",
+    response_model=GameInfo,
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't submit this vote right now",
+        },
+    },
+)
+async def add_challenge_vote(room_code: str, vote: ChallengeVote):
+    logger.info("POST /game/%s/challenge-vote: %s", room_code, vote.dict())
+
+    service = GhostService()
+    try:
+        return service.add_challenge_vote(room_code, vote)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
+    except InvalidMove as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
 
 
 #: Handler for optional serverless deployment of FastAPI app
