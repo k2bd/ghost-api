@@ -251,6 +251,43 @@ def test_add_move_pending_challenge(service):
         service.add_move("AAAA", invalid_move)
 
 
+def test_add_move_duplicate_position(service):
+    """
+    The turn player can make a move
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2")
+    service.add_player("AAAA", new_player2)
+
+    new_move1 = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="Z",
+    )
+
+    service.add_move("AAAA", new_move1)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.moves == [new_move1]
+    assert read_game.turn_player_name == "player2"
+
+    new_move2 = Move(
+        player_name="player2",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+
+    with pytest.raises(InvalidMove):
+        service.add_move("AAAA", new_move2)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.moves == [new_move1]
+    assert read_game.turn_player_name == "player2"
+
+
 def test_remove_player_turn_player(service):
     """
     Removing the turn player removes them from the players list and passes to
