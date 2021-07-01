@@ -168,8 +168,9 @@ class GhostService:
     def _advance_turn(self, game: GameInfo) -> None:
         if game.turn_player_name is None:
             if len(game.players) == 0:
-                return
-            new_player_name = game.players[0].name
+                new_player_name = None
+            else:
+                new_player_name = game.players[0].name
         else:
             player_indexes = {
                 player.name: ind for ind, player in enumerate(game.players)
