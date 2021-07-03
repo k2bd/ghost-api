@@ -6,7 +6,7 @@ def test_get_game_200(service, api_client):
     GET /game/{room_code} OK
     """
     service.create_game("ABCD")
-    player1 = Player(name="player1")
+    player1 = Player(name="player1", image_url="abc.def")
     service.add_player("ABCD", player1)
     move = Move(
         player_name="player1",
@@ -19,7 +19,7 @@ def test_get_game_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}],
+        "players": [{"name": "player1", "imageUrl": "abc.def"}],
         "moves": [
             {
                 "playerName": "player1",
@@ -97,8 +97,8 @@ def test_post_move_200(service, api_client):
     POST /game/{room_code}/move OK
     """
     service.create_game("ABCD")
-    player1 = Player(name="player1")
-    player2 = Player(name="player2")
+    player1 = Player(name="player1", image_url="abc.def")
+    player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", player1)
     service.add_player("ABCD", player2)
 
@@ -118,7 +118,10 @@ def test_post_move_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}, {"name": "player2"}],
+        "players": [
+            {"name": "player1", "imageUrl": "abc.def"},
+            {"name": "player2", "imageUrl": "ghi.jkl"},
+        ],
         "moves": [new_move_json],
         "turnPlayerName": "player2",
         "challenge": None,
@@ -153,8 +156,8 @@ def test_post_move_409_wrong_player(service, api_client):
     for a player other than the turn player
     """
     service.create_game("ABCD")
-    player1 = Player(name="player1")
-    player2 = Player(name="player2")
+    player1 = Player(name="player1", image_url="abc.def")
+    player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", player1)
     service.add_player("ABCD", player2)
 
@@ -182,9 +185,9 @@ def test_post_move_409_pending_challenge(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abc.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move = Move(
@@ -223,12 +226,14 @@ def test_post_player_200(service, api_client):
     POST /game/{room_code}/player OK
     """
     service.create_game("ABCD")
-    response = api_client.post("/game/ABCD/player", json={"name": "player1"})
+    response = api_client.post(
+        "/game/ABCD/player", json={"name": "player1", "imageUrl": "abc.def"}
+    )
 
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}],
+        "players": [{"name": "player1", "imageUrl": "abc.def"}],
         "moves": [],
         "turnPlayerName": "player1",
         "challenge": None,
@@ -241,7 +246,9 @@ def test_post_player_404(service, api_client):
     POST /game/{room_code}/player
     for a nonexistent game
     """
-    response = api_client.post("/game/ABCD/player", json={"name": "player1"})
+    response = api_client.post(
+        "/game/ABCD/player", json={"name": "player1", "imageUrl": "abc.def"}
+    )
 
     assert response.status_code == 404
     assert response.json() == {"message": "Game 'ABCD' does not exist"}
@@ -252,8 +259,8 @@ def test_delete_player_200(service, api_client):
     DELETE /game/{room_code}/player OK
     """
     service.create_game("ABCD")
-    player1 = Player(name="player1")
-    player2 = Player(name="player2")
+    player1 = Player(name="player1", image_url="aaaa.aaa")
+    player2 = Player(name="player2", image_url="abc.def")
     service.add_player("ABCD", player1)
     service.add_player("ABCD", player2)
 
@@ -262,7 +269,7 @@ def test_delete_player_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player2"}],
+        "players": [{"name": "player2", "imageUrl": "abc.def"}],
         "moves": [],
         "turnPlayerName": "player2",
         "challenge": None,
@@ -287,9 +294,9 @@ def test_post_challenge_200(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
@@ -315,7 +322,10 @@ def test_post_challenge_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}, {"name": "player2"}],
+        "players": [
+            {"name": "player1", "imageUrl": "abd.def"},
+            {"name": "player2", "imageUrl": "ghi.jkl"},
+        ],
         "moves": [new_move_json],
         "turnPlayerName": "player1",
         "challenge": {
@@ -359,9 +369,9 @@ def test_post_challenge_409(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
@@ -401,9 +411,9 @@ def test_post_challenge_response_200(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
@@ -435,7 +445,10 @@ def test_post_challenge_response_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}, {"name": "player2"}],
+        "players": [
+            {"name": "player1", "imageUrl": "abd.def"},
+            {"name": "player2", "imageUrl": "ghi.jkl"},
+        ],
         "moves": [new_move_json],
         "turnPlayerName": "player1",
         "challenge": {
@@ -470,9 +483,9 @@ def test_post_challenge_response_409(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
@@ -513,9 +526,9 @@ def test_post_challenge_vote_200(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
@@ -547,7 +560,10 @@ def test_post_challenge_vote_200(service, api_client):
     assert response.status_code == 200
     assert response.json() == {
         "roomCode": "ABCD",
-        "players": [{"name": "player1"}, {"name": "player2"}],
+        "players": [
+            {"name": "player1", "imageUrl": "abd.def"},
+            {"name": "player2", "imageUrl": "ghi.jkl"},
+        ],
         "moves": [new_move_json],
         "turnPlayerName": "player1",
         "challenge": {
@@ -582,9 +598,9 @@ def test_post_challenge_vote_409(service, api_client):
     """
     service.create_game("ABCD")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="abd.def")
     service.add_player("ABCD", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ghi.jkl")
     service.add_player("ABCD", new_player2)
 
     new_move_json = {
