@@ -4,9 +4,17 @@ from typing import List, Optional
 from fastapi_camelcase import CamelModel
 
 
+class GuestLogin(CamelModel):
+    #: Selected display name
+    name: str
+
+
 class Player(CamelModel):
     #: Player display name
     name: str
+
+    #: Display image URL
+    image_url: str
 
 
 class Position(CamelModel):

@@ -94,7 +94,7 @@ def test_add_player(service):
     """
     service.create_game("AAAA")
 
-    new_player = Player(name="player1")
+    new_player = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player)
 
     read_game = service.read_game("AAAA")
@@ -109,9 +109,9 @@ def test_add_players(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="another_player")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     read_game = service.read_game("AAAA")
@@ -125,9 +125,9 @@ def test_add_player_idempotent(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player1")
+    new_player2 = Player(name="player1", image_url="abc.def")
     service.add_player("AAAA", new_player2)
 
     read_game = service.read_game("AAAA")
@@ -141,9 +141,9 @@ def test_add_move(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move1 = Move(
@@ -177,9 +177,9 @@ def test_add_move_wrong_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -222,9 +222,9 @@ def test_add_move_pending_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -257,9 +257,9 @@ def test_add_move_duplicate_position(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move1 = Move(
@@ -295,9 +295,9 @@ def test_remove_player_turn_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -323,9 +323,9 @@ def test_remove_player_other_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     current_game = service.add_player("AAAA", new_player2)
 
     assert current_game.turn_player_name == "player1"
@@ -343,7 +343,7 @@ def test_remove_player_only_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
 
     service.remove_player("AAAA", "player1")
@@ -359,7 +359,7 @@ def test_remove_player_nonexistent_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
 
     service.remove_player("AAAA", "player2")
@@ -375,9 +375,9 @@ def test_create_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -413,11 +413,11 @@ def test_create_challenge_second_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
-    new_player3 = Player(name="player3")
+    new_player3 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player3)
 
     new_move = Move(
@@ -460,9 +460,9 @@ def test_create_challenge_invalid_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -487,11 +487,11 @@ def test_create_challenge_previous_moves(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
-    new_player2 = Player(name="player3")
+    new_player2 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player2)
 
     first_move = Move(
@@ -523,9 +523,9 @@ def test_create_challenge_no_moves(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     challenge_move = Move(
@@ -548,9 +548,9 @@ def test_create_challenge_response(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -592,9 +592,9 @@ def test_create_challenge_response_no_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -618,9 +618,9 @@ def test_create_challenge_response_wrong_state(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -652,9 +652,9 @@ def test_add_challenge_vote(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -696,11 +696,11 @@ def test_add_challenge_vote_complete_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
-    new_player3 = Player(name="player3")
+    new_player3 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player3)
 
     new_move = Move(
@@ -746,9 +746,9 @@ def test_add_challenge_vote_no_challenge(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -772,9 +772,9 @@ def test_add_challenge_vote_wrong_state(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -805,9 +805,9 @@ def test_add_challenge_vote_voting_twice(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
@@ -855,9 +855,9 @@ def test_add_challenge_vote_non_player(service):
     """
     service.create_game("AAAA")
 
-    new_player1 = Player(name="player1")
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
     service.add_player("AAAA", new_player1)
-    new_player2 = Player(name="player2")
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
     new_move = Move(
