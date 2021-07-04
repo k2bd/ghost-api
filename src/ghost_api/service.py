@@ -216,7 +216,7 @@ class GhostService:
             raise InvalidMove(f"There is already a move on {new_move.position.dict()}")
 
         if len(new_move.letter) != 1:
-            raise InvalidMove(f"Moves can only be one letter")
+            raise InvalidMove("Moves can only be one letter")
 
         # TODO: validate move position and value
 
