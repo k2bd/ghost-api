@@ -215,6 +215,9 @@ class GhostService:
         if new_move.position in [move.position for move in game.moves]:
             raise InvalidMove(f"There is already a move on {new_move.position.dict()}")
 
+        if len(new_move.letter) != 1:
+            raise InvalidMove(f"Moves can only be one letter")
+
         # TODO: validate move position and value
 
         self.games_table.update_item(
