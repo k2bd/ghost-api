@@ -104,7 +104,7 @@ class GhostService:
         """
         game = self.read_game(room_code)
 
-        if new_player.name in [player.name for player in game.players]:
+        if new_player.name in [player.name for player in game.players + game.losers]:
             return game
 
         # If this is the first player to join the game, initialize the turn player
