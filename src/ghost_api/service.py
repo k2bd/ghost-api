@@ -213,7 +213,7 @@ class GhostService:
             raise WrongPlayer(msg.format(game.turn_player_name, new_move.player_name))
 
         if new_move.player_name not in [player.name for player in game.players]:
-            return InvalidMove("Must join a game to play a move")
+            raise InvalidMove("Must join a game to play a move")
 
         if new_move.position in [move.position for move in game.moves]:
             raise InvalidMove(f"There is already a move on {new_move.position.dict()}")
