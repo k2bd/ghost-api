@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,6 +18,7 @@ from ghost_api.types import (
     ChallengeResponse,
     ChallengeVote,
     GameInfo,
+    GuestLogin,
     Move,
     NewChallenge,
     Player,
@@ -38,6 +41,18 @@ class ErrorMessage(CamelModel):
     """An error message with additional content"""
 
     message: str
+
+
+@app.post("/login/guest", response_model=Player)
+async def login_guest(info: GuestLogin):
+    """
+    Simple guest login that generates a display picture
+    """
+    name_hash = hashlib.md5(info.name.encode()).hexdigest()
+    return Player(
+        name=info.name,
+        image_url=f"https://www.gravatar.com/avatar/{name_hash}?d=identicon",
+    )
 
 
 @app.get(
