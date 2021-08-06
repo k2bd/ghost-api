@@ -9,6 +9,8 @@ from mangum import Mangum
 from ghost_api.exceptions import (
     GameAlreadyExists,
     GameDoesNotExist,
+    GameNotStarted,
+    GameStarted,
     InvalidMove,
     WrongPlayer,
 )
@@ -105,6 +107,26 @@ async def delete_game(room_code: str) -> None:
 
 
 @app.post(
+    "/game/{room_code}/start",
+    response_model=GameInfo,
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+    },
+)
+async def start_game(room_code: str):
+    """
+    Start a game, if it's not started
+    """
+    logger.info("POST /game/%s/start", room_code)
+
+    service = GhostService()
+    try:
+        return service.start_game(room_code)
+    except GameDoesNotExist as e:
+        return JSONResponse(status_code=404, content={"message": str(e)})
+
+
+@app.post(
     "/game/{room_code}/move",
     response_model=GameInfo,
     responses={
@@ -128,6 +150,8 @@ async def post_new_move(room_code: str, move: Move):
         return JSONResponse(status_code=409, content={"message": str(e)})
     except InvalidMove as e:
         return JSONResponse(status_code=409, content={"message": str(e)})
+    except GameNotStarted as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
 
@@ -135,7 +159,13 @@ async def post_new_move(room_code: str, move: Move):
 @app.post(
     "/game/{room_code}/player",
     response_model=GameInfo,
-    responses={404: {"model": ErrorMessage, "description": "The game does not exist"}},
+    responses={
+        404: {"model": ErrorMessage, "description": "The game does not exist"},
+        409: {
+            "model": ErrorMessage,
+            "description": "The player can't join right now",
+        },
+    },
 )
 async def join_game(room_code: str, player: Player):
     """
@@ -146,6 +176,8 @@ async def join_game(room_code: str, player: Player):
     service = GhostService()
     try:
         return service.add_player(room_code, player)
+    except GameStarted as e:
+        return JSONResponse(status_code=409, content={"message": str(e)})
     except GameDoesNotExist as e:
         return JSONResponse(status_code=404, content={"message": str(e)})
 
