@@ -424,6 +424,43 @@ def test_remove_player_only_player(service):
     assert read_game.turn_player_name is None
 
 
+def test_remove_player_game_started_winner(service):
+    """
+    Removing a player so there's only one left, when the game is started,
+    makes the remaining player win
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
+    service.remove_player("AAAA", "player1")
+
+    game = service.read_game("AAAA")
+    assert game.winner == new_player2
+
+
+def test_remove_player_game_not_started_no_winner(service):
+    """
+    Removing a player so there's only one left, when the game is not started,
+    doesn't create a winer
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.remove_player("AAAA", "player1")
+
+    game = service.read_game("AAAA")
+    assert game.winner is None
+
+
 def test_remove_player_nonexistent_player(service):
     """
     Removing the only player resets the turn player to None
@@ -829,6 +866,51 @@ def test_add_challenge_vote_complete_challenge(service):
     assert read_game.players == [new_player2, new_player3]
     assert read_game.losers == [new_player1]
     assert read_game.turn_player_name == "player3"
+
+
+def test_add_challenge_vote_complete_challenge_winner(service):
+    """
+    A challenge taking it down to 1 player creates a winner
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.COMPLETE_WORD,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    vote1 = ChallengeVote(
+        voter_name="player1",
+        pro_challenge=True,
+    )
+    service.add_challenge_vote("AAAA", vote1)
+    vote2 = ChallengeVote(
+        voter_name="player2",
+        pro_challenge=True,
+    )
+    service.add_challenge_vote("AAAA", vote2)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.challenge is None
+    assert read_game.players == [new_player2]
+    assert read_game.losers == [new_player1]
+    assert read_game.winner == new_player2
 
 
 def test_add_challenge_vote_no_challenge(service):

@@ -147,6 +147,21 @@ class GhostService:
         )
         return self.read_game(room_code)
 
+    def _determine_winner(self, room_code: str) -> None:
+        """
+        Determine if there's a winner and update the game in the database if so
+        """
+        game = self.read_game(room_code)
+        if (len(game.players) == 1) and game.started:
+            (winner,) = game.players
+            self.games_table.update_item(
+                Key={"room_code": room_code},
+                UpdateExpression=("set winner=:p"),
+                ExpressionAttributeValues={
+                    ":p": winner.dict(),
+                },
+            )
+
     def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """
         Remove a player from the game, updating the turn player if necessary.
@@ -173,9 +188,6 @@ class GhostService:
                 turn_player = new_player_list[player_index % len(new_player_list)]
                 turn_player_name = turn_player.name
 
-        # TODO - determine if there's a winner
-        # (if the game is started and there's one person left)
-
         self.games_table.update_item(
             Key={"room_code": room_code},
             UpdateExpression=("set turn_player_name=:t, players=:p"),
@@ -185,6 +197,8 @@ class GhostService:
             },
             ConditionExpression=Attr("players").eq(game.dict()["players"]),
         )
+
+        self._determine_winner(room_code)
 
         return self.read_game(room_code)
 
@@ -378,8 +392,6 @@ class GhostService:
         ]
         (loser,) = [player for player in game.players if player.name == loser_name]
 
-        # TODO - determine if there's a winner
-
         self.games_table.update_item(
             Key={"room_code": game.room_code},
             UpdateExpression=(
@@ -396,6 +408,8 @@ class GhostService:
                 & Attr("losers").eq(game.dict()["losers"])
             ),
         )
+
+        self._determine_winner(game.room_code)
 
     def add_challenge_vote(self, room_code: str, vote: ChallengeVote) -> GameInfo:
         """
