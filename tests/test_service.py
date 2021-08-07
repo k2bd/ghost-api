@@ -3,6 +3,8 @@ import pytest
 from ghost_api.exceptions import (
     GameAlreadyExists,
     GameDoesNotExist,
+    GameNotStarted,
+    GameStarted,
     InvalidMove,
     WrongPlayer,
 )
@@ -28,6 +30,8 @@ def test_create_game(service):
 
     assert game == GameInfo(
         room_code="ABCD",
+        started=False,
+        winner=None,
         players=[],
         turn_player_name=None,
         moves=[],
@@ -54,6 +58,8 @@ def test_read_game(service):
 
     assert read_game == GameInfo(
         room_code="ABCD",
+        started=False,
+        winner=None,
         players=[],
         turn_player_name=None,
         moves=[],
@@ -86,6 +92,26 @@ def test_delete_game_idempotent(service):
     Deleting a nonexistent game is fine
     """
     service.delete_game("AABB")  # Game doesn't exist
+
+
+def test_start_game(service):
+    """
+    Can start a game
+    """
+    service.create_game("ABCD")
+
+    service.start_game("ABCD")
+
+    game = service.read_game("ABCD")
+    assert game.started
+
+
+def test_start_nonexistent_game(service):
+    """
+    Can't start a game that doesn't exist
+    """
+    with pytest.raises(GameDoesNotExist):
+        service.start_game("ABCD")
 
 
 def test_add_player(service):
@@ -135,6 +161,19 @@ def test_add_player_idempotent(service):
     assert read_game.turn_player_name == "player1"
 
 
+def test_add_player_game_started(service):
+    """
+    A player can't join after a game is started
+    """
+    service.create_game("AAAA")
+
+    service.start_game("AAAA")
+
+    new_player = Player(name="player1", image_url="aaa.bbb")
+    with pytest.raises(GameStarted):
+        service.add_player("AAAA", new_player)
+
+
 def test_add_move(service):
     """
     The turn player can make a move
@@ -145,6 +184,8 @@ def test_add_move(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move1 = Move(
         player_name="player1",
@@ -171,6 +212,27 @@ def test_add_move(service):
     assert read_game.turn_player_name == "player1"
 
 
+def test_add_move_game_not_started(service):
+    """
+    A player can't make a move before a game is started
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    new_move1 = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="Z",
+    )
+
+    with pytest.raises(GameNotStarted):
+        service.add_move("AAAA", new_move1)
+
+
 def test_add_move_wrong_player(service):
     """
     Whoever isn't the turn player cannot make a move
@@ -181,6 +243,8 @@ def test_add_move_wrong_player(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player2",
@@ -201,6 +265,7 @@ def test_add_move_empty_game(service):
     Nobody can move if there's nobody joined
     """
     service.create_game("AAAA")
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -226,6 +291,8 @@ def test_add_move_pending_challenge(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -261,6 +328,8 @@ def test_add_move_duplicate_position(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move1 = Move(
         player_name="player1",
@@ -299,6 +368,8 @@ def test_remove_player_turn_player(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -353,6 +424,43 @@ def test_remove_player_only_player(service):
     assert read_game.turn_player_name is None
 
 
+def test_remove_player_game_started_winner(service):
+    """
+    Removing a player so there's only one left, when the game is started,
+    makes the remaining player win
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
+    service.remove_player("AAAA", "player1")
+
+    game = service.read_game("AAAA")
+    assert game.winner == new_player2
+
+
+def test_remove_player_game_not_started_no_winner(service):
+    """
+    Removing a player so there's only one left, when the game is not started,
+    doesn't create a winer
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.remove_player("AAAA", "player1")
+
+    game = service.read_game("AAAA")
+    assert game.winner is None
+
+
 def test_remove_player_nonexistent_player(service):
     """
     Removing the only player resets the turn player to None
@@ -379,6 +487,8 @@ def test_create_challenge(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -419,6 +529,8 @@ def test_create_challenge_second_challenge(service):
     service.add_player("AAAA", new_player2)
     new_player3 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player3)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -465,6 +577,8 @@ def test_create_challenge_invalid_player(service):
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
+    service.start_game("AAAA")
+
     new_move = Move(
         player_name="player1",
         position=Position(x=0, y=0),
@@ -493,6 +607,8 @@ def test_create_challenge_previous_moves(service):
     service.add_player("AAAA", new_player2)
     new_player2 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     first_move = Move(
         player_name="player1",
@@ -528,6 +644,8 @@ def test_create_challenge_no_moves(service):
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
+    service.start_game("AAAA")
+
     challenge_move = Move(
         player_name="player1",
         position=Position(x=0, y=0),
@@ -552,6 +670,8 @@ def test_create_challenge_response(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -597,6 +717,8 @@ def test_create_challenge_response_no_challenge(service):
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
 
+    service.start_game("AAAA")
+
     new_move = Move(
         player_name="player1",
         position=Position(x=0, y=0),
@@ -622,6 +744,8 @@ def test_create_challenge_response_wrong_state(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -656,6 +780,8 @@ def test_add_challenge_vote(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -703,6 +829,8 @@ def test_add_challenge_vote_complete_challenge(service):
     new_player3 = Player(name="player3", image_url="eee.fff")
     service.add_player("AAAA", new_player3)
 
+    service.start_game("AAAA")
+
     new_move = Move(
         player_name="player1",
         position=Position(x=0, y=0),
@@ -740,6 +868,51 @@ def test_add_challenge_vote_complete_challenge(service):
     assert read_game.turn_player_name == "player3"
 
 
+def test_add_challenge_vote_complete_challenge_winner(service):
+    """
+    A challenge taking it down to 1 player creates a winner
+    """
+    service.create_game("AAAA")
+
+    new_player1 = Player(name="player1", image_url="aaa.bbb")
+    service.add_player("AAAA", new_player1)
+    new_player2 = Player(name="player2", image_url="ccc.ddd")
+    service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
+
+    new_move = Move(
+        player_name="player1",
+        position=Position(x=0, y=0),
+        letter="U",
+    )
+    service.add_move("AAAA", new_move)
+
+    challenge = NewChallenge(
+        challenger_name="player2",
+        move=new_move,
+        type=ChallengeType.COMPLETE_WORD,
+    )
+    service.create_challenge("AAAA", challenge)
+
+    vote1 = ChallengeVote(
+        voter_name="player1",
+        pro_challenge=True,
+    )
+    service.add_challenge_vote("AAAA", vote1)
+    vote2 = ChallengeVote(
+        voter_name="player2",
+        pro_challenge=True,
+    )
+    service.add_challenge_vote("AAAA", vote2)
+
+    read_game = service.read_game("AAAA")
+    assert read_game.challenge is None
+    assert read_game.players == [new_player2]
+    assert read_game.losers == [new_player1]
+    assert read_game.winner == new_player2
+
+
 def test_add_challenge_vote_no_challenge(service):
     """
     Can't vote when there's no challenge
@@ -750,6 +923,8 @@ def test_add_challenge_vote_no_challenge(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -776,6 +951,8 @@ def test_add_challenge_vote_wrong_state(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -809,6 +986,8 @@ def test_add_challenge_vote_voting_twice(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",
@@ -859,6 +1038,8 @@ def test_add_challenge_vote_non_player(service):
     service.add_player("AAAA", new_player1)
     new_player2 = Player(name="player2", image_url="ccc.ddd")
     service.add_player("AAAA", new_player2)
+
+    service.start_game("AAAA")
 
     new_move = Move(
         player_name="player1",

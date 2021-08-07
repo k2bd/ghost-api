@@ -5,6 +5,8 @@ from ghost_api.constants import AWS_REGION, GAMES_TABLE_NAME, LOCAL_DYNAMODB_END
 from ghost_api.exceptions import (
     GameAlreadyExists,
     GameDoesNotExist,
+    GameNotStarted,
+    GameStarted,
     InvalidMove,
     WrongPlayer,
 )
@@ -37,6 +39,8 @@ def dynamodb():
 def new_game(room_code: str) -> GameInfo:
     return GameInfo(
         room_code=room_code,
+        started=False,
+        winner=None,
         players=[],
         losers=[],
         turn_player_name=None,
@@ -93,6 +97,18 @@ class GhostService:
         """
         self.games_table.delete_item(Key={"room_code": room_code})
 
+    def start_game(self, room_code: str) -> GameInfo:
+        """
+        Start a game if it isn't already started
+        """
+        self.read_game(room_code)
+        self.games_table.update_item(
+            Key={"room_code": room_code},
+            UpdateExpression="set started=:s",
+            ExpressionAttributeValues={":s": True},
+        )
+        return self.read_game(room_code)
+
     def add_player(self, room_code: str, new_player: Player) -> GameInfo:
         """
         Add a player to a game, if they're not already in the game
@@ -101,8 +117,12 @@ class GhostService:
         ------
         GameDoesNotExist
             If the game doesn't exist
+        GameStarted
+            If the game has started so can't be joined
         """
         game = self.read_game(room_code)
+        if game.started:
+            raise GameStarted("Cannot join a game that's started")
 
         if new_player.name in [player.name for player in game.players + game.losers]:
             return game
@@ -126,6 +146,21 @@ class GhostService:
             ConditionExpression=Attr("players").eq(game.dict()["players"]),
         )
         return self.read_game(room_code)
+
+    def _determine_winner(self, room_code: str) -> None:
+        """
+        Determine if there's a winner and update the game in the database if so
+        """
+        game = self.read_game(room_code)
+        if (len(game.players) == 1) and game.started:
+            (winner,) = game.players
+            self.games_table.update_item(
+                Key={"room_code": room_code},
+                UpdateExpression=("set winner=:p"),
+                ExpressionAttributeValues={
+                    ":p": winner.dict(),
+                },
+            )
 
     def remove_player(self, room_code: str, player_name: str) -> GameInfo:
         """
@@ -162,6 +197,8 @@ class GhostService:
             },
             ConditionExpression=Attr("players").eq(game.dict()["players"]),
         )
+
+        self._determine_winner(room_code)
 
         return self.read_game(room_code)
 
@@ -202,8 +239,12 @@ class GhostService:
             If a player other than the turn player is making the move
         InvalidMove
             If the move cannot be made
+        GameNotStarted
+            If the game hasn't started yet
         """
         game = self.read_game(room_code)
+        if not game.started:
+            raise GameNotStarted("Cannot make a move in a game that hasn't started")
 
         if game.challenge is not None:
             raise InvalidMove(f"Game {room_code!r} has an open challenge")
@@ -350,6 +391,7 @@ class GhostService:
             player for player in game.players if player.name != loser_name
         ]
         (loser,) = [player for player in game.players if player.name == loser_name]
+
         self.games_table.update_item(
             Key={"room_code": game.room_code},
             UpdateExpression=(
@@ -366,6 +408,8 @@ class GhostService:
                 & Attr("losers").eq(game.dict()["losers"])
             ),
         )
+
+        self._determine_winner(game.room_code)
 
     def add_challenge_vote(self, room_code: str, vote: ChallengeVote) -> GameInfo:
         """
