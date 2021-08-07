@@ -6,5 +6,8 @@
         "serverless": "^2.48.0",
         "serverless-api-gateway-throttling": "^1.1.1",
         "serverless-python-requirements": "^5.1.1"
+    },
+    "dependencies": {
+        "inquirer": "^8.1.2"
     }
 }
