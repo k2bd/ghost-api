@@ -2,6 +2,7 @@ service: ghost-api
 
 plugins:
   - serverless-python-requirements
+  - serverless-api-gateway-throttling
 
 
 package:
@@ -64,3 +65,10 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 2
           WriteCapacityUnits: 2
+
+custom:
+  # Configures throttling settings for the API Gateway stage
+  # They apply to all http endpoints, unless specifically overridden
+  apiGatewayThrottling:
+    maxRequestsPerSecond: 30
+    maxConcurrentRequests: 10

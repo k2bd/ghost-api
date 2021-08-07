@@ -31,9 +31,10 @@ jobs:
       with:
         poetry-version: 1.1.4
     - name: Serverless Deploy
-      uses: dhollerbach/github-action-serverless-with-python-requirements@master
+      uses: serverless/github-action@master
       with:
-        args: '--stage ${BRANCH_NAME}'
+        args: -c "npm install --also=dev && npm list -g && npm list && serverless deploy --stage=${BRANCH_NAME} --verbose"
+        entrypoint: /bin/bash
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
