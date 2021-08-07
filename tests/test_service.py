@@ -446,7 +446,7 @@ def test_remove_player_game_started_winner(service):
 def test_remove_player_game_not_started_no_winner(service):
     """
     Removing a player so there's only one left, when the game is not started,
-    doesn't create a winer
+    doesn't create a winner
     """
     service.create_game("AAAA")
 

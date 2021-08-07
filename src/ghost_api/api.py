@@ -237,7 +237,7 @@ async def create_challenge(room_code: str, challenge: NewChallenge):
         },
     },
 )
-async def create_challenge_resposne(
+async def create_challenge_response(
     room_code: str,
     challenge_response: ChallengeResponse,
 ):
