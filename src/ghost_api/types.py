@@ -105,6 +105,12 @@ class GameInfo(CamelModel):
     #: Room Code
     room_code: str
 
+    #: If the game has started
+    started: bool
+
+    #: Winning player, if any
+    winner: Optional[Player]
+
     #: Players, in move order
     players: List[Player]
 

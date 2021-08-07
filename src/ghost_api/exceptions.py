@@ -20,3 +20,11 @@ class PlayerNotJoined(GhostServiceException):
 
 class InvalidMove(GhostServiceException):
     """A challenge made is not valid"""
+
+
+class GameStarted(GhostServiceException):
+    """An action is invalid because the game has already started"""
+
+
+class GameNotStarted(GhostServiceException):
+    """An action is invalid because the game hasn't started yet"""
