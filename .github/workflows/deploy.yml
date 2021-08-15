@@ -33,7 +33,8 @@ jobs:
     - name: Serverless Deploy
       uses: dhollerbach/github-action-serverless-with-python-requirements@master
       with:
-        args: -c "npm install --also=dev && npm list -g && npm list && serverless deploy --stage=${BRANCH_NAME} --verbose"
+        args: "--stage=${BRANCH_NAME} --verbose"
+        # args: -c "npm install --also=dev && npm list -g && npm list && serverless deploy --stage=${BRANCH_NAME} --verbose"
         # entrypoint: /bin/sh
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_ACCESS_KEY }}
