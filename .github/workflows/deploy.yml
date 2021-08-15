@@ -31,7 +31,7 @@ jobs:
       with:
         poetry-version: 1.1.4
     - name: Serverless Deploy
-      uses: serverless/github-action@master
+      uses: dhollerbach/github-action-serverless-with-python-requirements@master
       with:
         args: -c "npm install --also=dev && npm list -g && npm list && serverless deploy --stage=${BRANCH_NAME} --verbose"
         entrypoint: /bin/sh
