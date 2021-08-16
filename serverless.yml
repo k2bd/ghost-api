@@ -4,12 +4,10 @@ plugins:
   - serverless-python-requirements
   - serverless-api-gateway-throttling
 
-
 package:
   individually: true
   exclude:
     - ./**
-
 
 provider:
   name: aws
@@ -31,7 +29,6 @@ provider:
       Resource:
         - { "Fn::GetAtt": ["GamesTable", "Arn"] }
 
-
 functions:
   api:
     description: 2D Ghost REST API
@@ -47,7 +44,6 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
-
 
 resources:
   Resources:
