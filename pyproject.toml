@@ -6,7 +6,7 @@ authors = ["Kevin Duff <kevinkelduff@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-fastapi = "^0.65.1"
+fastapi = "^0.109.1"
 pydantic = "^1.8.2"
 fastapi-camelcase = "^1.0.2"
 mangum = "^0.11.0"
